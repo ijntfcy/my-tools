@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams Pro - 計時挑戰版</title>
+    <title>Jexams Pro - 最終計時版</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; --warning: #FF9500; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
         
-        /* 計時器 UI */
-        .timer-box { width: 100%; margin-bottom: 10px; }
-        .timer-text { font-size: 14px; font-weight: bold; color: var(--primary); text-align: right; margin-bottom: 5px; }
-        .timer-container { width: 100%; height: 8px; background: #E5E5EA; border-radius: 4px; overflow: hidden; }
-        #timerBar { height: 100%; width: 100%; background: var(--success); transition: width 1s linear, background 0.3s; }
+        /* --- 計時器 UI 強化 --- */
+        .timer-box { width: 100%; margin-bottom: 15px; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .timer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .timer-label { font-size: 14px; font-weight: bold; color: #666; }
+        #timeLeft { font-size: 18px; font-weight: 800; color: var(--primary); }
+        .timer-container { width: 100%; height: 10px; background: #E5E5EA; border-radius: 5px; overflow: hidden; }
+        #timerBar { height: 100%; width: 100%; background: var(--success); transition: width 1s linear; }
 
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
         .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
         .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; color: #1C1C1E; }
         .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -35,15 +37,18 @@
 <div class="container">
     <div id="sheetMenu" class="menu-bar"></div>
     
-    <div class="timer-box">
-        <div class="timer-text">⏳ 倒數：<span id="timeLeft">30</span> 秒</div>
+    <div class="timer-box" id="timerSection" style="display:none;">
+        <div class="timer-header">
+            <span class="timer-label">⏳ 答題倒數</span>
+            <span id="timeLeft">30</span>
+        </div>
         <div class="timer-container"><div id="timerBar"></div></div>
     </div>
 
     <div id="info" style="font-size: 12px; color: #8E8E93; margin-bottom: 8px;"></div>
     <div class="card">
         <div><span id="subject" class="badge">科目</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
-        <div id="qText" class="q-text">讀取中...</div>
+        <div id="qText" class="q-text">請輸入密碼載入試卷...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
     <div id="options" class="options-grid"></div>
@@ -51,36 +56,44 @@
 </div>
 
 <script>
-    const API_URL = "您的GAS網址"; // 記得更新此處
-    const TIMER_SECONDS = 30; // 每題秒數
+    // --- 重要：更新您的 GAS 網址，已加入時間戳記防止快取 ---
+    const BASE_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    const API_URL = `${BASE_URL}?t=${new Date().getTime()}`;
+    
+    const TIMER_SECONDS = 30; // 每題秒數設定
     let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
     let timerInterval, currentTime = TIMER_SECONDS;
     let userKey = sessionStorage.getItem('quiz_auth');
 
     async function safeFetch(params) {
         if (!userKey) {
-            userKey = prompt("請輸入密碼 123456：");
+            userKey = prompt("此測驗受密碼保護，請輸入 123456：");
             if (!userKey) return null;
             sessionStorage.setItem('quiz_auth', userKey);
         }
         try {
-            const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&${params}`);
+            // 在每個 API 請求後都加上時間戳記確保最新
+            const resp = await fetch(`${API_URL}&pwd=${encodeURIComponent(userKey)}&${params}`);
             const data = await resp.json();
+            if (data.error) { alert(data.error); sessionStorage.removeItem('quiz_auth'); location.reload(); return null; }
             return data;
-        } catch (e) { alert("連線失敗"); return null; }
+        } catch (e) { alert("連線失敗，請確認 GAS 權限已設為『所有人』"); return null; }
     }
 
-    // --- 計時器邏輯 ---
+    // --- 計時器核心功能 ---
+    function stopTimer() { clearInterval(timerInterval); }
+
     function startTimer() {
-        clearInterval(timerInterval);
+        stopTimer();
         currentTime = TIMER_SECONDS;
+        document.getElementById('timerSection').style.display = "block";
         updateTimerUI();
         timerInterval = setInterval(() => {
             currentTime--;
             updateTimerUI();
             if (currentTime <= 0) {
-                clearInterval(timerInterval);
-                timeOutHandler();
+                stopTimer();
+                handleTimeOut();
             }
         }, 1000);
     }
@@ -90,32 +103,33 @@
         const text = document.getElementById('timeLeft');
         const percent = (currentTime / TIMER_SECONDS) * 100;
         bar.style.width = percent + "%";
-        text.innerText = currentTime;
+        text.innerText = currentTime + "s";
         
+        // 變色邏輯
         if (percent < 30) bar.style.background = "var(--danger)";
         else if (percent < 60) bar.style.background = "var(--warning)";
         else bar.style.background = "var(--success)";
     }
 
-    function timeOutHandler() {
+    function handleTimeOut() {
         if (isProcessing) return;
         isProcessing = true;
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
         fb.style.background = "#FFF3E0";
-        fb.innerText = "⏰ 時間到！自動標記正確答案。";
+        fb.innerText = "⏰ 時間到！自動標示答案。";
         
         const q = quizData[index];
         const correctAns = q.ans.toString().toUpperCase();
         document.querySelectorAll('.opt-btn').forEach(b => {
             if(correctAns.includes(b.dataset.id)) b.classList.add('correct');
         });
-
+        
         recordError(q, " (逾時)");
         updateBtn(true, "下一題");
     }
 
-    // --- 測驗核心邏輯 ---
+    // --- 初始化與渲染 ---
     window.onload = async () => {
         const sheets = await safeFetch('type=listSheets');
         if (!sheets) return;
@@ -139,10 +153,10 @@
 
     function render() {
         if (index >= quizData.length) {
-            clearInterval(timerInterval);
+            stopTimer();
             document.getElementById('qText').innerText = "🎉 測驗完成！";
             document.getElementById('options').innerHTML = "";
-            document.querySelector('.timer-box').style.display = "none";
+            document.getElementById('timerSection').style.display = "none";
             return;
         }
         const q = quizData[index];
@@ -150,7 +164,7 @@
         const isMulti = cleanAns.includes(",");
         
         selectedIds = []; isProcessing = false;
-        document.getElementById('info').innerText = `題目進度：${index + 1} / ${quizData.length}`;
+        document.getElementById('info').innerText = `題目：${index + 1} / ${quizData.length}`;
         document.getElementById('subject').innerText = q.subject;
         document.getElementById('qTypeBadge').innerText = isMulti ? "多選題" : "單選/是非";
         document.getElementById('qText').innerText = q.q;
@@ -158,14 +172,12 @@
         
         const container = document.getElementById('options');
         container.innerHTML = "";
-        
-        // 洗牌選項並保留原始 ID
         let opts = q.opts.map((t, i) => ({ text: t, id: (i + 1).toString() })).sort(() => Math.random() - 0.5);
 
         opts.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = `${idx + 1}. ${opt.text}`; // 自動加序號
+            btn.innerText = `${idx + 1}. ${opt.text}`;
             btn.dataset.id = opt.id;
             btn.onclick = () => {
                 if (isProcessing) return;
@@ -174,7 +186,7 @@
                     selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
                     updateBtn(selectedIds.length > 0, "確認送出答案");
                 } else { 
-                    clearInterval(timerInterval);
+                    stopTimer();
                     judgeSingle(btn, opt.id, cleanAns); 
                 }
             };
@@ -203,7 +215,7 @@
     async function handleAction() {
         const btn = document.getElementById('mainBtn');
         if (btn.innerText === "確認送出答案") {
-            clearInterval(timerInterval);
+            stopTimer();
             isProcessing = true;
             const q = quizData[index];
             const ansArr = q.ans.toString().toUpperCase().split(",").sort();
@@ -222,11 +234,11 @@
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
         fb.style.background = correct ? "#E8F5E9" : "#FFEBEE";
-        fb.innerText = correct ? "✨ 正確！" : `❌ 錯誤。答案為：${ans}`;
+        fb.innerText = correct ? "✨ 正確！" : `❌ 錯誤。正確答案：${ans}`;
     }
 
     async function recordError(q, suffix = "") {
-        fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify({...q, q: q.q + suffix}))}`);
+        fetch(`${BASE_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify({...q, q: q.q + suffix}))}`);
     }
 </script>
 </body>
