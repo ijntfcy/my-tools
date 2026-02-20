@@ -10,23 +10,23 @@
         body { background: var(--bg); margin: 0; padding: 0; color: var(--text-main); font-family: "PingFang TC", sans-serif; }
         .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--line); }
         .header-title { font-weight: 800; font-size: 0.85rem; color: var(--accent); letter-spacing: 2px; }
-        .btn-circle { background: white; border: 1px solid var(--line); width: 38px; height: 38px; border-radius: 50%; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .btn-circle { background: white; border: 1px solid var(--line); width: 38px; height: 38px; border-radius: 50%; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .container { padding: 0 20px 50px; max-width: 480px; margin: 0 auto; }
         .summary-card { background: var(--grad); border-radius: 35px; padding: 35px 25px; margin: 20px 0; color: white; box-shadow: 0 15px 35px rgba(142, 115, 91, 0.25); text-align: center; }
         .summary-label { font-size: 0.75rem; font-weight: 700; opacity: 0.85; margin-bottom: 10px; }
-        .summary-total { font-size: 2.5rem; font-weight: 900; letter-spacing: -1px; }
+        .summary-total { font-size: 2.5rem; font-weight: 900; }
         .action-bar { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px; }
-        .btn-action { flex: 1; padding: 14px 5px; border-radius: 20px; border: 1px solid var(--line); background: white; color: var(--accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: 0.3s; }
-        .btn-action.active { background: #6D543E; color: #FFFFFF; border-color: #6D543E; }
-        .card { background: var(--card); border-radius: 30px; padding: 25px; margin-bottom: 20px; border: 1px solid white; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
-        .type-badge { position: absolute; top: 22px; right: 25px; font-size: 0.7rem; color: var(--text-sub); font-weight: 700; border: 1px solid var(--line); padding: 2px 8px; border-radius: 8px; }
-        .bank-name { font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; color: #333; }
+        .btn-action { flex: 1; padding: 14px 5px; border-radius: 20px; border: 1px solid var(--line); background: white; color: var(--accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .btn-action.active { background: #6D543E; color: white; }
+        .card { background: var(--card); border-radius: 30px; padding: 25px; margin-bottom: 20px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
+        .type-badge { position: absolute; top: 22px; right: 25px; font-size: 0.7rem; color: var(--text-sub); border: 1px solid var(--line); padding: 2px 8px; border-radius: 8px; }
+        .bank-name { font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
         .val-money { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
         .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 80%; max-width: 300px; }
-        input { width: 100%; padding: 15px; margin: 20px 0; border: 1px solid var(--line); border-radius: 15px; text-align: center; font-size: 1.5rem; outline: none; box-sizing: border-box; }
-        .btn-go { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: 700; cursor: pointer; }
+        input { width: 100%; padding: 15px; margin: 20px 0; border: 1px solid var(--line); border-radius: 15px; text-align: center; font-size: 1.5rem; outline: none; }
+        .btn-go { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -42,7 +42,7 @@
 <div id="app" style="display:none;">
     <div class="header">
         <button class="btn-circle" onclick="location.href='../index.html'"><i class="fas fa-home"></i></button>
-        <div id="userWelcome" class="header-title">LOADING...</div>
+        <div id="userWelcome" class="header-title">HELLO</div>
         <div style="width:38px;"></div>
     </div>
     <div class="container">
@@ -60,9 +60,12 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec";
-    let pageKey = ""; 
+    const API_URL = "您的部署網址";
+    let pageKey = "", userIp = "獲取中...";
     let allData = [], allHeaders = [], dynamicTypes = ["全部"], currentTypeIdx = 0;
+
+    // 獲取 IP
+    fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => userIp = d.ip).catch(() => userIp = "失敗");
 
     function unlock() {
         const p = document.getElementById('passCode').value;
@@ -77,42 +80,30 @@
         fetchData();
     }
 
-    // 💡 修正 1：強化的加總邏輯（過濾非數字，負數或零顯示 0）
-    function updateTotal(data) {
-        let total = 0;
-        data.forEach(item => {
-            const amountKey = Object.keys(item).find(key => key.includes('金額'));
-            if (amountKey) {
-                let rawVal = String(item[amountKey] || "0");
-                // 移除所有非數字、非負號、非點號的字元
-                let cleanVal = parseFloat(rawVal.replace(/[^0-9.-]/g, ''));
-                // 如果轉換失敗 (NaN) 或小於等於 0，則視為 0
-                if (isNaN(cleanVal) || cleanVal <= 0) cleanVal = 0;
-                total += cleanVal;
-            }
-        });
-        document.getElementById('totalDisplay').innerText = `$ ${total.toLocaleString()}`;
+    // 💡 數值處理：若為非數值或負數，回傳 0
+    function cleanAmount(val) {
+        let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+        return (isNaN(n) || n <= 0) ? 0 : n;
     }
 
     function formatDate(dateStr) {
         if (!dateStr || dateStr === '-') return '-';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+        return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
     }
 
     async function fetchData() {
         const list = document.getElementById('mainList');
         list.innerHTML = '<div style="text-align:center; padding:50px; color:#A0A0A0;">同步中...</div>';
         try {
-            const res = await fetch(`${API_URL}?pwd=${pageKey}`);
+            const res = await fetch(`${API_URL}?pwd=${pageKey}&ip=${userIp}`);
             const json = await res.json();
             if(json.status === "success") {
                 allData = json.data;
                 allHeaders = json.headers;
                 document.getElementById('userWelcome').innerText = `HELLO, ${json.userName}`;
-                const types = [...new Set(allData.map(d => d['帳戶類別']))].filter(Boolean);
-                dynamicTypes = ["全部", ...types];
+                dynamicTypes = ["全部", ...new Set(allData.map(d => d['帳戶類別']))].filter(Boolean);
                 render();
             } else { alert(json.message); logout(); }
         } catch(e) { list.innerHTML = "連線失敗"; }
@@ -120,9 +111,8 @@
 
     function cycleFilter() {
         currentTypeIdx = (currentTypeIdx + 1) % dynamicTypes.length;
-        const typeName = dynamicTypes[currentTypeIdx];
-        document.getElementById('filterLabel').innerText = (typeName === "全部") ? "帳戶" : typeName;
-        document.getElementById('btnFilter').classList.toggle('active', typeName !== "全部");
+        document.getElementById('filterLabel').innerText = (currentTypeIdx === 0) ? "帳戶" : dynamicTypes[currentTypeIdx];
+        document.getElementById('btnFilter').classList.toggle('active', currentTypeIdx !== 0);
         render();
     }
 
@@ -130,26 +120,26 @@
         const type = dynamicTypes[currentTypeIdx];
         const filtered = (type === "全部") ? allData : allData.filter(d => d['帳戶類別'] === type);
         
-        updateTotal(filtered);
+        // 加總
+        let total = filtered.reduce((sum, item) => {
+            const key = Object.keys(item).find(k => k.includes('金額'));
+            return sum + cleanAmount(item[key]);
+        }, 0);
+        document.getElementById('totalDisplay').innerText = `$ ${total.toLocaleString()}`;
 
         document.getElementById('mainList').innerHTML = filtered.map(item => {
             let rows = allHeaders.map(h => {
                 if(['帳戶名稱','帳戶類別'].includes(h)) return '';
                 let val = item[h] || '-', css = "";
-                
                 if(h.includes('金額')) { 
-                    let num = parseFloat(String(val).replace(/[^0-9.-]/g,''));
-                    // 💡 修正 2：如果數值為 0、負數或非數字，顯示 0
-                    if (isNaN(num) || num <= 0) num = 0;
-                    val = `$ ${num.toLocaleString()}`; 
+                    val = `$ ${cleanAmount(val).toLocaleString()}`; 
                     css = "val-money"; 
                 }
-                if(h.includes('利率')) { 
-                    let rate = parseFloat(val);
-                    val = isNaN(rate) ? val : (rate * 100).toFixed(2) + '%'; 
+                if(h.includes('日期')) val = formatDate(val);
+                if(h.includes('利率')) {
+                    let r = parseFloat(val);
+                    val = isNaN(r) ? val : (r * 100).toFixed(2) + '%';
                 }
-                if(h.includes('日期')) { val = formatDate(val); }
-
                 return `<div class="row"><span style="color:#A0A0A0; font-size:0.8rem">${h}</span><span class="${css}">${val}</span></div>`;
             }).join('');
             return `<div class="card"><span class="type-badge">${item['帳戶類別']}</span><span class="bank-name">${item['帳戶名稱']}</span>${rows}</div>`;
