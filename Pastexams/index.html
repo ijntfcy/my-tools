@@ -6,7 +6,7 @@
     <title>Jexams 雲端測驗</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
         
         /* 選單導航 */
@@ -26,12 +26,12 @@
         .clear-btn { background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 12px; }
 
         /* 題目卡片 */
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; width: 100%; box-sizing: border-box; }
         .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
-        .q-text { font-size: 1.35rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; word-break: break-all; }
-        .info-row { display: flex; justify-content: space-between; font-size: 12px; color: #8E8E93; margin-bottom: 8px; padding: 0 5px; }
+        .q-text { font-size: 1.35rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; }
+        .info-row { display: flex; justify-content: space-between; font-size: 12px; color: #8E8E93; margin-bottom: 8px; width: 100%; }
 
-        /* 選項按鈕 - 核心修復 */
+        /* 選項按鈕 */
         .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
         .opt-btn { 
             background: white; border: 2px solid #E5E5EA; border-radius: 15px; 
@@ -39,7 +39,6 @@
             font-weight: 600; transition: all 0.2s; color: #1C1C1E; 
             width: 100%; box-sizing: border-box; display: block;
         }
-        .opt-btn:active { transform: scale(0.98); }
         .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; color: var(--primary); }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
@@ -69,7 +68,7 @@
     </div>
     <div class="card">
         <div id="subject" class="badge">科目</div>
-        <div id="qText" class="q-text">正在從 Google 試算表同步試題...</div>
+        <div id="qText" class="q-text">正在讀取試題...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
     <div id="options" class="options-grid"></div>
@@ -81,7 +80,6 @@
     let rawData = [], quizData = [], index = 0, selectedIds = [];
     let totalSec = 0, currentSheet = new URLSearchParams(window.location.search).get('sheet');
 
-    // 初始化讀取
     window.onload = async () => {
         try {
             const listResp = await fetch(`${API_URL}?type=listSheets`);
@@ -99,38 +97,26 @@
 
             const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
             rawData = await resp.json();
-            if(!rawData || rawData.length === 0) { throw new Error("無資料"); }
-
+            
             setInterval(() => {
                 totalSec++;
-                const m = Math.floor(totalSec/60).toString().padStart(2,'0');
-                const s = (totalSec%60).toString().padStart(2,'0');
-                document.getElementById('timer').innerText = `總計時: ${m}:${s}`;
+                document.getElementById('timer').innerText = `總計時: ${Math.floor(totalSec/60).toString().padStart(2,'0')}:${(totalSec%60).toString().padStart(2,'0')}`;
             }, 1000);
             
             initQuiz();
-        } catch (e) {
-            document.getElementById('qText').innerText = "❌ 無法讀取資料，請確認 GAS 是否正確部署為『所有人』且試算表非空白。";
-            console.error(e);
-        }
+        } catch (e) { document.getElementById('qText').innerText = "❌ 讀取失敗，請確認 GAS 設定。"; }
     };
 
     function initQuiz() {
         quizData = document.getElementById('qRandom').checked ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
-        index = 0; 
-        render();
+        index = 0; render();
     }
 
     function render() {
         if (index >= quizData.length) { 
-            document.getElementById('qText').innerText = "🎉 全數測驗完成！"; 
-            document.getElementById('options').innerHTML = ""; 
-            const mainBtn = document.getElementById('mainBtn');
-            mainBtn.innerText = "重新測驗";
-            mainBtn.disabled = false;
-            mainBtn.classList.add('ready');
-            mainBtn.onclick = () => { location.reload(); };
-            return; 
+            document.getElementById('qText').innerText = "🎉 測驗完成！"; document.getElementById('options').innerHTML = ""; 
+            const mainBtn = document.getElementById('mainBtn'); mainBtn.innerText = "重新測驗"; mainBtn.disabled = false; mainBtn.classList.add('ready');
+            mainBtn.onclick = () => location.reload(); return; 
         }
 
         const q = quizData[index];
@@ -143,63 +129,49 @@
         const container = document.getElementById('options');
         container.innerHTML = "";
 
-        // 整理選項邏輯
         let isBoolean = (q.ans.toUpperCase() === "O" || q.ans.toUpperCase() === "X");
         let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
-        
-        let opts = optsData.map((text, i) => ({
-            text: text,
-            id: isBoolean ? text.toUpperCase() : (i + 1).toString()
-        }));
+        let opts = optsData.map((text, i) => ({ text: text, id: isBoolean ? text.toUpperCase() : (i + 1).toString() }));
 
         if (document.getElementById('optRandom').checked) opts.sort(() => Math.random() - 0.5);
 
-        // 生成按鈕
         opts.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.type = 'button';
             btn.innerText = opt.text;
             btn.dataset.id = opt.id;
-            // 綁定點擊事件
-            btn.addEventListener('click', function() {
-                handleSelect(this, opt.id, q.ans.toUpperCase());
-            });
+            btn.onclick = () => handleSelect(btn, opt.id);
             container.appendChild(btn);
         });
 
         const mainBtn = document.getElementById('mainBtn');
         mainBtn.innerText = q.ans.includes(",") ? "確認送出答案" : "請選擇答案";
-        mainBtn.disabled = true;
-        mainBtn.classList.remove('ready');
+        mainBtn.disabled = true; mainBtn.classList.remove('ready');
     }
 
-    async function handleSelect(btn, id, ans) {
+    // 重寫後的點擊處理邏輯，確保多選與單選都能正確點擊
+    function handleSelect(btn, id) {
         const q = quizData[index];
-        const isMulti = ans.includes(",");
+        const correctAns = q.ans.toUpperCase().replace(/\s/g, '');
+        const isMulti = correctAns.includes(",");
 
         if (!isMulti) {
-            // 單選/是非題邏輯
+            // 單選邏輯：點擊後直接開牌
             document.querySelectorAll('.opt-btn').forEach(b => {
-                b.style.pointerEvents = 'none'; // 鎖定點擊
-                if (b.dataset.id === ans) b.classList.add('correct');
+                b.style.pointerEvents = 'none'; // 禁止再次點擊
+                if (b.dataset.id === correctAns) b.classList.add('correct');
             });
-
-            if (id !== ans) {
+            if (id !== correctAns) {
                 btn.classList.add('wrong');
-                showFeedback(false, ans);
-                // 異步記錄錯題
+                showFeedback(false, q.ans);
                 fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
-            } else {
-                showFeedback(true);
-            }
-
+            } else { showFeedback(true); }
             const mainBtn = document.getElementById('mainBtn');
             mainBtn.innerText = "下一題";
             mainBtn.disabled = false;
             mainBtn.classList.add('ready');
         } else {
-            // 多選題邏輯
+            // 多選邏輯：允許切換選取狀態 
             btn.classList.toggle('selected');
             selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
             const mainBtn = document.getElementById('mainBtn');
@@ -211,7 +183,6 @@
     function handleAction() {
         const mainBtn = document.getElementById('mainBtn');
         const q = quizData[index];
-
         if (mainBtn.innerText === "確認送出答案") {
             const correctArr = q.ans.toUpperCase().replace(/\s/g, '').split(",").sort();
             const userArr = selectedIds.sort();
@@ -226,14 +197,9 @@
             if (!isCorrect) {
                 showFeedback(false, q.ans);
                 fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
-            } else {
-                showFeedback(true);
-            }
+            } else { showFeedback(true); }
             mainBtn.innerText = "下一題";
-        } else {
-            index++;
-            render();
-        }
+        } else { index++; render(); }
     }
 
     function showFeedback(isCorrect, ansText) {
@@ -244,10 +210,9 @@
     }
 
     async function clearErrors() {
-        if (confirm("確定要清除所有錯題記錄嗎？(不會刪除標題列)")) {
+        if (confirm("確定要清除所有錯題記錄嗎？")) {
             const resp = await fetch(`${API_URL}?type=clearErrors`);
-            const res = await resp.json();
-            if(res.status === "success") alert("已清除錯題分頁資料！");
+            alert("已成功清除錯題資料！");
         }
     }
 </script>
