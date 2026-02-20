@@ -2,43 +2,49 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Jexams 雲端測驗</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; -webkit-tap-highlight-color: transparent; }
         .container { width: 100%; max-width: 600px; }
         
         /* 選單導航 */
-        .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; }
-        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; transition: 0.2s; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         
         /* 控制列 */
         .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; }
-        .controls { display: flex; gap: 15px; }
+        .controls { display: flex; gap: 12px; }
         .switch { display: inline-flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; color: #48484A; }
         .switch input { display: none; }
-        .slider { width: 40px; height: 22px; background-color: #D1D1D6; border-radius: 20px; position: relative; transition: .3s; margin-right: 8px; }
+        .slider { width: 40px; height: 22px; background-color: #D1D1D6; border-radius: 20px; position: relative; transition: .3s; margin-right: 6px; }
         .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(18px); }
-        .clear-btn { background: var(--danger); color: white; border: none; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .clear-btn { background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 12px; }
 
         /* 題目卡片 */
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; }
         .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
-        .q-text { font-size: 1.4rem; font-weight: bold; line-height: 1.4; color: #1C1C1E; }
-        .info-row { display: flex; justify-content: space-between; font-size: 13px; color: #8E8E93; margin-bottom: 8px; font-weight: 500; }
+        .q-text { font-size: 1.35rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; word-break: break-all; }
+        .info-row { display: flex; justify-content: space-between; font-size: 12px; color: #8E8E93; margin-bottom: 8px; padding: 0 5px; }
 
-        /* 選項按鈕 */
-        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; transition: all 0.2s; color: #1C1C1E; width: 100%; box-sizing: border-box; }
-        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
+        /* 選項按鈕 - 核心修復 */
+        .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .opt-btn { 
+            background: white; border: 2px solid #E5E5EA; border-radius: 15px; 
+            padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; 
+            font-weight: 600; transition: all 0.2s; color: #1C1C1E; 
+            width: 100%; box-sizing: border-box; display: block;
+        }
+        .opt-btn:active { transform: scale(0.98); }
+        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; color: var(--primary); }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
         
-        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: #D1D1D6; color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; transition: 0.3s; }
+        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: #AEAEB2; color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; transition: 0.3s; }
         .action-btn.ready { background: var(--primary); box-shadow: 0 6px 16px rgba(0,122,255,0.3); }
 
         .feedback-box { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; font-size: 15px; border: 1px solid transparent; }
@@ -55,7 +61,7 @@
             <label class="switch"><input type="checkbox" id="qRandom" checked onchange="initQuiz()"><span class="slider"></span> 題目隨機</label>
             <label class="switch"><input type="checkbox" id="optRandom" checked onchange="render()"><span class="slider"></span> 選項隨機</label>
         </div>
-        <button class="clear-btn" onclick="clearErrors()">清除錯題記錄</button>
+        <button class="clear-btn" onclick="clearErrors()">清除記錄</button>
     </div>
     <div class="info-row">
         <div id="progress">載入中...</div>
@@ -63,7 +69,7 @@
     </div>
     <div class="card">
         <div id="subject" class="badge">科目</div>
-        <div id="qText" class="q-text">讀取中...</div>
+        <div id="qText" class="q-text">正在從 Google 試算表同步試題...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
     <div id="options" class="options-grid"></div>
@@ -75,111 +81,173 @@
     let rawData = [], quizData = [], index = 0, selectedIds = [];
     let totalSec = 0, currentSheet = new URLSearchParams(window.location.search).get('sheet');
 
+    // 初始化讀取
     window.onload = async () => {
-        const listResp = await fetch(`${API_URL}?type=listSheets`);
-        const sheetNames = await listResp.json();
-        const menu = document.getElementById('sheetMenu');
-        if (!currentSheet) currentSheet = sheetNames[0];
-        sheetNames.forEach(name => {
-            const btn = document.createElement('button');
-            btn.className = `menu-item ${name === currentSheet ? 'active' : ''}`;
-            btn.innerText = name;
-            btn.onclick = () => window.location.search = `?sheet=${encodeURIComponent(name)}`;
-            menu.appendChild(btn);
-        });
-        const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
-        rawData = await resp.json();
-        setInterval(() => {
-            totalSec++;
-            document.getElementById('timer').innerText = `總計時: ${Math.floor(totalSec/60).toString().padStart(2,'0')}:${(totalSec%60).toString().padStart(2,'0')}`;
-        }, 1000);
-        initQuiz();
+        try {
+            const listResp = await fetch(`${API_URL}?type=listSheets`);
+            const sheetNames = await listResp.json();
+            const menu = document.getElementById('sheetMenu');
+            if (!currentSheet) currentSheet = sheetNames[0];
+            
+            sheetNames.forEach(name => {
+                const btn = document.createElement('button');
+                btn.className = `menu-item ${name === currentSheet ? 'active' : ''}`;
+                btn.innerText = name;
+                btn.onclick = () => { location.href = `?sheet=${encodeURIComponent(name)}`; };
+                menu.appendChild(btn);
+            });
+
+            const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
+            rawData = await resp.json();
+            if(!rawData || rawData.length === 0) { throw new Error("無資料"); }
+
+            setInterval(() => {
+                totalSec++;
+                const m = Math.floor(totalSec/60).toString().padStart(2,'0');
+                const s = (totalSec%60).toString().padStart(2,'0');
+                document.getElementById('timer').innerText = `總計時: ${m}:${s}`;
+            }, 1000);
+            
+            initQuiz();
+        } catch (e) {
+            document.getElementById('qText').innerText = "❌ 無法讀取資料，請確認 GAS 是否正確部署為『所有人』且試算表非空白。";
+            console.error(e);
+        }
     };
 
     function initQuiz() {
         quizData = document.getElementById('qRandom').checked ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
-        index = 0; render();
+        index = 0; 
+        render();
     }
 
     function render() {
         if (index >= quizData.length) { 
-            document.getElementById('qText').innerText = "測驗完成！"; document.getElementById('options').innerHTML = ""; 
-            const btn = document.getElementById('mainBtn'); btn.innerText = "重新開始"; btn.disabled = false; btn.onclick = () => location.reload(); return; 
+            document.getElementById('qText').innerText = "🎉 全數測驗完成！"; 
+            document.getElementById('options').innerHTML = ""; 
+            const mainBtn = document.getElementById('mainBtn');
+            mainBtn.innerText = "重新測驗";
+            mainBtn.disabled = false;
+            mainBtn.classList.add('ready');
+            mainBtn.onclick = () => { location.reload(); };
+            return; 
         }
+
         const q = quizData[index];
         selectedIds = [];
         document.getElementById('progress').innerText = `第 ${index+1} / ${quizData.length} 題`;
-        document.getElementById('subject').innerText = q.subject;
+        document.getElementById('subject').innerText = q.subject || "通用";
         document.getElementById('qText').innerText = q.q;
         document.getElementById('ansFeedback').style.display = "none";
+        
         const container = document.getElementById('options');
         container.innerHTML = "";
-        let opts = (q.opts && q.opts.length > 0 ? q.opts : ["O", "X"]).map((t, i) => ({ text: t, id: (q.ans=="O"||q.ans=="X")? t.toUpperCase() : (i+1).toString() }));
+
+        // 整理選項邏輯
+        let isBoolean = (q.ans.toUpperCase() === "O" || q.ans.toUpperCase() === "X");
+        let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
+        
+        let opts = optsData.map((text, i) => ({
+            text: text,
+            id: isBoolean ? text.toUpperCase() : (i + 1).toString()
+        }));
+
         if (document.getElementById('optRandom').checked) opts.sort(() => Math.random() - 0.5);
+
+        // 生成按鈕
         opts.forEach(opt => {
             const btn = document.createElement('button');
-            btn.className = 'opt-btn'; btn.innerText = opt.text; btn.dataset.id = opt.id;
-            btn.onclick = () => handleSelect(btn, opt.id, q.ans);
+            btn.className = 'opt-btn';
+            btn.type = 'button';
+            btn.innerText = opt.text;
+            btn.dataset.id = opt.id;
+            // 綁定點擊事件
+            btn.addEventListener('click', function() {
+                handleSelect(this, opt.id, q.ans.toUpperCase());
+            });
             container.appendChild(btn);
         });
+
         const mainBtn = document.getElementById('mainBtn');
-        mainBtn.innerText = q.ans.includes(",") ? "確認送出" : "下一題";
-        mainBtn.disabled = true; mainBtn.classList.remove('ready');
-        mainBtn.onclick = handleAction; 
+        mainBtn.innerText = q.ans.includes(",") ? "確認送出答案" : "請選擇答案";
+        mainBtn.disabled = true;
+        mainBtn.classList.remove('ready');
     }
 
     async function handleSelect(btn, id, ans) {
-        if (!ans.includes(",")) { // 單選
-            document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null); 
-            const isCorrect = id === ans;
-            btn.classList.add(isCorrect ? 'correct' : 'wrong');
-            if (!isCorrect) {
-                document.querySelectorAll('.opt-btn').forEach(b => { if(b.dataset.id === ans) b.classList.add('correct'); });
+        const q = quizData[index];
+        const isMulti = ans.includes(",");
+
+        if (!isMulti) {
+            // 單選/是非題邏輯
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                b.style.pointerEvents = 'none'; // 鎖定點擊
+                if (b.dataset.id === ans) b.classList.add('correct');
+            });
+
+            if (id !== ans) {
+                btn.classList.add('wrong');
                 showFeedback(false, ans);
-                await fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(quizData[index]))}`);
+                // 異步記錄錯題
+                fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
+            } else {
+                showFeedback(true);
             }
-            document.getElementById('mainBtn').disabled = false;
-            document.getElementById('mainBtn').classList.add('ready');
-        } else { // 複選
+
+            const mainBtn = document.getElementById('mainBtn');
+            mainBtn.innerText = "下一題";
+            mainBtn.disabled = false;
+            mainBtn.classList.add('ready');
+        } else {
+            // 多選題邏輯
             btn.classList.toggle('selected');
             selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
             const mainBtn = document.getElementById('mainBtn');
-            mainBtn.disabled = selectedIds.length === 0;
+            mainBtn.disabled = (selectedIds.length === 0);
             mainBtn.classList.toggle('ready', selectedIds.length > 0);
         }
     }
 
-    async function handleAction() {
-        const q = quizData[index];
+    function handleAction() {
         const mainBtn = document.getElementById('mainBtn');
-        if (q.ans.includes(",") && mainBtn.innerText === "確認送出") {
-            const correctArr = q.ans.toUpperCase().split(",").sort();
+        const q = quizData[index];
+
+        if (mainBtn.innerText === "確認送出答案") {
+            const correctArr = q.ans.toUpperCase().replace(/\s/g, '').split(",").sort();
             const userArr = selectedIds.sort();
             const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+
             document.querySelectorAll('.opt-btn').forEach(b => {
-                b.onclick = null;
+                b.style.pointerEvents = 'none';
                 if (correctArr.includes(b.dataset.id)) b.classList.add('correct');
                 if (b.classList.contains('selected') && !correctArr.includes(b.dataset.id)) b.classList.add('wrong');
             });
+
             if (!isCorrect) {
                 showFeedback(false, q.ans);
-                await fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(quizData[index]))}`);
-            } else { showFeedback(true); }
+                fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
+            } else {
+                showFeedback(true);
+            }
             mainBtn.innerText = "下一題";
-        } else { index++; render(); }
+        } else {
+            index++;
+            render();
+        }
     }
 
-    function showFeedback(isCorrect, ans) {
+    function showFeedback(isCorrect, ansText) {
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
         fb.className = `feedback-box ${isCorrect ? 'fb-correct' : 'fb-wrong'}`;
-        fb.innerText = isCorrect ? "✨ 正確！" : `❌ 答錯了。正確答案：${ans}`;
+        fb.innerText = isCorrect ? "✨ 回答正確！" : `❌ 答錯了，正確答案：${ansText}`;
     }
 
     async function clearErrors() {
-        if (confirm("確定要清除所有錯題記錄嗎？")) {
-            await fetch(`${API_URL}?type=clearErrors`);
-            alert("已清除！");
+        if (confirm("確定要清除所有錯題記錄嗎？(不會刪除標題列)")) {
+            const resp = await fetch(`${API_URL}?type=clearErrors`);
+            const res = await resp.json();
+            if(res.status === "success") alert("已清除錯題分頁資料！");
         }
     }
 </script>
