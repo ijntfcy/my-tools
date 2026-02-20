@@ -3,37 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>個人資產監控</title>
+    <title>個人財務監控</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #f2f2f7; --card: #ffffff; --primary: #007aff; --danger: #ff3b30; --success: #34c759; --text: #1c1c1e; }
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        
-        /* 🛡️ 安全防護：禁止選取文字 */
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
         body { background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-user-select: none; user-select: none; }
-        
         .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); padding: 15px; border-bottom: 1px solid #d1d1d6; position: sticky; top: 0; z-index: 100; display: none; }
         .toolbar { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; }
         .btn { flex: 1; padding: 12px; border-radius: 14px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; }
         .btn-sync { background: var(--success); }
         .btn-logout { background: var(--danger); }
-
         .container { padding: 12px; max-width: 500px; margin: 0 auto; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border-left: 6px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
         .card.test-account { border-left-color: #ff9500 !important; background: #fffaf0 !important; }
-        .card-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 15px; color: var(--primary); }
-        
+        .card-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; color: var(--primary); }
         .row { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f2f2f7; }
         .label { color: #8e8e93; font-size: 0.9rem; }
-        .value { font-weight: 600; color: #3a3a3c; }
+        .value { font-weight: 600; }
         .high-rate { color: var(--danger); font-weight: 800; }
-
         .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal { background: white; padding: 40px 30px; border-radius: 30px; text-align: center; width: 88%; max-width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
         input { width: 100%; padding: 16px; margin: 25px 0; border: 2px solid #e5e5ea; border-radius: 16px; font-size: 1.8rem; text-align: center; outline: none; }
         .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: bold; font-size: 1.1rem; }
-        
-        .loading { text-align: center; padding: 60px; color: #8e8e93; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -41,16 +33,16 @@
 <div id="loginOverlay" class="overlay">
     <div class="modal">
         <div style="font-size: 3rem; margin-bottom: 10px;">🔐</div>
-        <h2 style="margin:0">身分驗證</h2>
+        <h2>資產解鎖</h2>
         <input type="password" id="accPwd" placeholder="請輸入代碼" inputmode="numeric">
-        <button class="btn-login" onclick="login()">驗證進入</button>
+        <button class="btn-login" onclick="login()">驗證身分</button>
     </div>
 </div>
 
 <div id="header" class="header">
     <div class="toolbar">
         <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> 同步資料</button>
-        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 登出</button>
+        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 安全登出</button>
     </div>
 </div>
 
@@ -58,7 +50,7 @@
 
 <script>
     const CONFIG = {
-        // 🛡️ 代碼中僅保留 API 網址，不存放正確密碼
+        // 🛡️ 這裡僅保留 API 網址，不存放任何密碼資訊
         API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec" 
     };
 
@@ -76,7 +68,7 @@
         const pwd = document.getElementById('accPwd').value;
         if(pwd) {
             CURRENT_PWD = pwd;
-            sessionStorage.setItem('active_session_pwd', pwd);
+            sessionStorage.setItem('active_session_pwd', pwd); // 確保重新整理後需重入
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('header').style.display = 'block';
             fetchData();
@@ -90,19 +82,18 @@
 
     async function fetchData() {
         const list = document.getElementById('dataList');
-        list.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 正在安全連線中...</div>';
+        list.innerHTML = '<div style="text-align:center;padding:50px;color:#8e8e93"><i class="fas fa-spinner fa-spin"></i> 安全連線中...</div>';
         try {
             const res = await fetch(`${CONFIG.API_URL}?pwd=${CURRENT_PWD}`);
             const json = await res.json();
-            
             if(json.status === "success") {
                 render(json.headers, json.data);
             } else {
-                alert("代碼無效或連線過期");
+                alert("驗證失敗，請重新登入");
                 logout();
             }
         } catch(e) {
-            list.innerHTML = '<div class="loading">❌ 資料傳輸中斷</div>';
+            list.innerHTML = '<div style="text-align:center;padding:50px;color:red">❌ 同步失敗，請重新登入</div>';
         }
     }
 
@@ -113,13 +104,13 @@
                 let val = item[h];
                 let valClass = "value";
                 
-                // 自動美化：金額、利率、日期
+                // 🛠️ 格式化美化
                 if (h.includes('利率')) {
                     if (parseFloat(val) >= 0.015) valClass += " high-rate";
                     val = (parseFloat(val) * 100).toFixed(2) + '%';
                 } else if (h.includes('金額')) {
                     val = Number(val).toLocaleString();
-                } else if (h.includes('日期') || h.includes('更新')) {
+                } else if (h.includes('日期')) {
                     const d = new Date(val);
                     if (!isNaN(d.getTime())) val = d.toISOString().split('T')[0];
                 }
@@ -127,11 +118,7 @@
                 return `<div class="row"><span class="label">${h}</span><span class="${valClass}">${val || '-'}</span></div>`;
             }).join('');
             
-            return `
-            <div class="card ${isTest ? 'test-account' : ''}">
-                <div class="card-title"><i class="fas fa-wallet"></i> ${item['帳戶名稱'] || '未命名'}</div>
-                ${rows}
-            </div>`;
+            return `<div class="card ${isTest ? 'test-account' : ''}"><div class="card-title"><i class="fas fa-wallet"></i> ${item['帳戶名稱'] || '未命名'}</div>${rows}</div>`;
         }).join('');
     }
 </script>
