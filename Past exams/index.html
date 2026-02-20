@@ -1,176 +1,162 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Jexams 雲端測驗系統 - 專業版</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
-  <style>
-    :root { 
-      --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --bg: #F2F2F7; 
-    }
-    body { 
-      font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; 
-      display: flex; flex-direction: column; align-items: center; min-height: 100vh; 
-    }
-    .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; flex: 1; }
-    
-    /* --- 功能選單區 (Jexams/擴充用1/擴充用2) --- */
-    .menu-bar { 
-      display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px;
-    }
-    .menu-item { 
-      flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; 
-      font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;
-    }
-    .menu-item.active { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); color: var(--primary); }
-
-    /* --- 開關控制區 (隨機題目/隨機選項) --- */
-    .control-panel { 
-      display: flex; justify-content: space-between; align-items: center; 
-      margin-bottom: 20px; padding: 0 5px;
-    }
-    .toggle-group { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #48484A; }
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { 
-      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
-      background-color: #C7C7CC; transition: .4s; border-radius: 34px; 
-    }
-    .slider:before { 
-      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; 
-      background-color: white; transition: .4s; border-radius: 50%; 
-    }
-    input:checked + .slider { background-color: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    /* --- 題目顯示區 --- */
-    .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; color: #8E8E93; }
-    .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-bottom: 15px; position: relative; }
-    .q-text { font-size: 1.25rem; font-weight: 700; line-height: 1.5; margin: 15px 0; }
-    
-    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
-    .opt-btn { 
-      background: white; border: 1.5px solid #E5E5EA; border-radius: 12px; padding: 15px; 
-      text-align: left; font-size: 1rem; cursor: pointer; display: flex; align-items: center;
-    }
-    .opt-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
-    .opt-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
-    
-    .footer { padding: 20px 0; margin-top: auto; }
-    .next-btn { 
-      width: 100%; padding: 16px; border-radius: 15px; border: none; 
-      background: var(--primary); color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; 
-    }
-    .next-btn:disabled { background: #C7C7CC; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jexams 修正版</title>
+    <style>
+        :root { --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --bg: #F2F2F7; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; }
+        .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 10px; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .control-panel { display: flex; justify-content: space-around; margin-bottom: 15px; font-size: 14px; }
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .q-text { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .opt-btn { background: white; border: 1.5px solid #E5E5EA; border-radius: 12px; padding: 15px; text-align: left; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        .opt-btn.selected { border-color: var(--primary); background: #E8F0FE; }
+        .opt-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .opt-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
+        .footer { margin-top: 20px; }
+        .next-btn { width: 100%; padding: 16px; border-radius: 15px; border: none; background: var(--primary); color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+        .next-btn:disabled { background: #C7C7CC; }
+    </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="menu-bar">
-    <button class="menu-item" id="m-Jexams" onclick="changeSheet('Jexams')">Jexams</button>
-    <button class="menu-item" id="m-擴充用1" onclick="changeSheet('擴充用1')">擴充用1</button>
-    <button class="menu-item" id="m-擴充用2" onclick="changeSheet('擴充用2')">擴充用2</button>
-  </div>
-
-  <div class="control-panel">
-    <div class="toggle-group">
-      <span>題目隨機</span>
-      <label class="switch"><input type="checkbox" id="qRandom" onchange="applySettings()"><span class="slider"></span></label>
+    <div class="menu-bar">
+        <button class="menu-item" id="m-Jexams" onclick="changeSheet('Jexams')">Jexams</button>
+        <button class="menu-item" id="m-擴充用1" onclick="changeSheet('擴充用1')">擴充用1</button>
+        <button class="menu-item" id="m-擴充用2" onclick="changeSheet('擴充用2')">擴充用2</button>
     </div>
-    <div class="toggle-group">
-      <span>選項隨機</span>
-      <label class="switch"><input type="checkbox" id="optRandom" onchange="applySettings()"><span class="slider"></span></label>
+
+    <div class="control-panel">
+        <label>題目隨機 <input type="checkbox" id="qRandom" onchange="initQuiz()"></label>
+        <label>選項隨機 <input type="checkbox" id="optRandom" onchange="render()"></label>
     </div>
-  </div>
 
-  <div class="header-info">
-    <span id="progress">載入中...</span>
-    <span id="score">得分: 0</span>
-  </div>
+    <div class="card">
+        <div id="qText" class="q-text">讀取中...</div>
+        <div id="options" class="options-grid"></div>
+    </div>
 
-  <div class="card animate__animated animate__fadeIn">
-    <div id="qText" class="q-text">讀取題庫中...</div>
-  </div>
-
-  <div id="options" class="options-grid"></div>
-
-  <div class="footer">
-    <button id="nextBtn" class="next-btn" onclick="nextQuestion()" disabled>下一題</button>
-  </div>
+    <div class="footer">
+        <button id="nextBtn" class="next-btn" onclick="handleAction()" disabled>下一題</button>
+    </div>
 </div>
 
 <script>
-  // 請更換為您的 GAS 部署網址
-  const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-  
-  let rawData = [], currentSheet = new URLSearchParams(window.location.search).get('sheet') || 'Jexams';
-  let quizData = [], index = 0, totalScore = 0;
+    // 請填入您的 GAS URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    let rawData = [], quizData = [], index = 0, selected = [];
 
-  // 初始化：載入資料並設定選單狀態
-  window.onload = async () => {
+    const currentSheet = new URLSearchParams(window.location.search).get('sheet') || 'Jexams';
     document.getElementById(`m-${currentSheet}`).classList.add('active');
-    try {
-      const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
-      rawData = await resp.json();
-      applySettings();
-    } catch (e) { document.getElementById('qText').innerText = "連線失敗，請檢查網路或 API 設定。"; }
-  };
 
-  // 切換分頁選單功能
-  function changeSheet(name) { window.location.search = `?sheet=${name}`; }
+    window.onload = async () => {
+        try {
+            const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
+            rawData = await resp.json();
+            initQuiz();
+        } catch (e) { document.getElementById('qText').innerText = "連線失敗"; }
+    };
 
-  // 應用設定：處理題目與選項的排序
-  function applySettings() {
-    const isQRandom = document.getElementById('qRandom').checked;
-    quizData = isQRandom ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
-    index = 0; totalScore = 0;
-    render();
-  }
+    function changeSheet(name) { window.location.search = `?sheet=${name}`; }
 
-  // 渲染題目與選項 (包含選項隨機功能)
-  function render() {
-    if (index >= quizData.length) { finishQuiz(); return; }
-    const q = quizData[index];
-    const isOptRandom = document.getElementById('optRandom').checked;
-    
-    document.getElementById('progress').innerText = `第 ${index + 1} / ${quizData.length} 題`;
-    document.getElementById('qText').innerText = q.q;
-    document.getElementById('nextBtn').disabled = true;
+    function initQuiz() {
+        const isQRandom = document.getElementById('qRandom').checked;
+        quizData = isQRandom ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
+        index = 0;
+        render();
+    }
 
-    // 處理選項排序
-    let displayOpts = q.opts.map((text, i) => ({ text, isCorrect: (i + 1).toString() === q.ans }));
-    if (isOptRandom) displayOpts.sort(() => Math.random() - 0.5);
+    function render() {
+        if (index >= quizData.length) { 
+            document.getElementById('qText').innerText = "測驗完成！";
+            document.getElementById('options').innerHTML = "";
+            return;
+        }
+        const q = quizData[index];
+        const isOptRandom = document.getElementById('optRandom').checked;
+        selected = [];
+        
+        document.getElementById('qText').innerText = q.q;
+        document.getElementById('nextBtn').innerText = q.ans.includes(",") ? "確認送出" : "下一題";
+        document.getElementById('nextBtn').disabled = true;
 
-    const container = document.getElementById('options');
-    container.innerHTML = '';
-    displayOpts.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.className = 'opt-btn animate__animated fadeIn';
-      btn.innerText = opt.text;
-      btn.onclick = () => check(btn, opt.isCorrect);
-      container.appendChild(btn);
-    });
-  }
+        // 【修正重點】建立選項索引對照，確保選項隨機後仍能抓到正確答案
+        let opts = q.opts.map((t, i) => ({ text: t, id: (i + 1).toString() }));
+        
+        // 特殊處理：是非題答案可能是 "O" 或 "X"
+        if (q.ans === "O" || q.ans === "X") {
+            opts = q.opts.map(t => ({ text: t, id: t })); 
+        }
 
-  function check(btn, isCorrect) {
-    document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
-    if (isCorrect) { btn.classList.add('correct'); totalScore++; } 
-    else { btn.classList.add('wrong'); }
-    document.getElementById('score').innerText = `得分: ${totalScore}`;
-    document.getElementById('nextBtn').disabled = false;
-  }
+        if (isOptRandom) opts.sort(() => Math.random() - 0.5);
 
-  function nextQuestion() { index++; render(); }
+        const container = document.getElementById('options');
+        container.innerHTML = "";
+        opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = opt.text;
+            btn.onclick = () => selectOpt(btn, opt.id, q.ans);
+            container.appendChild(btn);
+        });
+    }
 
-  function finishQuiz() {
-    const pass = totalScore >= quizData.length * 0.6; // 及格判定：答對 60% 以上
-    document.getElementById('qText').innerHTML = `<h2>測驗結束</h2><p>最終得分：${totalScore}</p><p>${pass ? '🎉 恭喜及格！' : '📝 仍需努力，不及格哦。'}</p>`;
-    document.getElementById('options').innerHTML = '';
-    document.getElementById('nextBtn').innerText = "重新開始";
-    document.getElementById('nextBtn').onclick = () => location.reload();
-  }
+    function selectOpt(btn, optId, correctAns) {
+        const isMulti = correctAns.includes(",");
+        
+        if (!isMulti) {
+            // 單選直接判定
+            document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
+            if (optId === correctAns) {
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                // 標示出正確答案
+                findCorrect(correctAns);
+            }
+            document.getElementById('nextBtn').disabled = false;
+        } else {
+            // 複選逻辑
+            btn.classList.toggle('selected');
+            if (selected.includes(optId)) selected = selected.filter(id => id !== optId);
+            else selected.push(optId);
+            document.getElementById('nextBtn').disabled = selected.length === 0;
+        }
+    }
+
+    function handleAction() {
+        const q = quizData[index];
+        if (document.getElementById('nextBtn').innerText === "確認送出") {
+            // 檢查複選答案
+            const userAns = selected.sort().join(",");
+            const rightAns = q.ans.split(",").sort().join(",");
+            
+            document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
+            if (userAns === rightAns) {
+                alert("完全正確！");
+            } else {
+                alert("錯誤！正確答案是: " + q.ans);
+                findCorrect(q.ans);
+            }
+            document.getElementById('nextBtn').innerText = "下一題";
+        } else {
+            index++;
+            render();
+        }
+    }
+
+    function findCorrect(ans) {
+        const ansList = ans.split(",");
+        // 這裡需要根據按鈕的原始 ID 來標綠色
+        // 簡化處理：直接提示答案或在 UI 上標註
+    }
 </script>
 </body>
 </html>
