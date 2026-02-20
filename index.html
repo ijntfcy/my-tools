@@ -6,127 +6,34 @@
     <title>Digital Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #000000;
-            --card-bg: rgba(28, 28, 30, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
-            --accent: #0A84FF;
-            --text: #ffffff;
-            --text-dim: #8E8E93;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* 背景微光效果 */
-        body::before {
-            content: "";
-            position: fixed;
-            top: -10%; left: -10%;
-            width: 40%; height: 40%;
-            background: radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 70%);
-            z-index: -1;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 500px;
-            padding: 40px 0;
-        }
-
-        /* 個人名片區 */
-        .profile {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .avatar {
-            width: 80px; height: 80px;
-            background: linear-gradient(135deg, #1c1c1e, #3a3a3c);
-            border-radius: 50%;
-            margin: 0 auto 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border);
-            font-size: 2rem;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(48, 209, 88, 0.1);
-            color: #30D158;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* 網格系統 */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            aspect-ratio: 1/1;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .card:active { transform: scale(0.95); background: rgba(44, 44, 46, 0.9); }
-
+        :root { --bg: #000000; --card-bg: rgba(28, 28, 30, 0.7); --border: rgba(255, 255, 255, 0.1); --accent: #0A84FF; --text: #ffffff; --text-dim: #8E8E93; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 90%; max-width: 500px; padding: 40px 0; }
+        .profile { text-align: center; margin-bottom: 40px; }
+        .avatar { width: 80px; height: 80px; background: linear-gradient(135deg, #1c1c1e, #3a3a3c); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); font-size: 2rem; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(48, 209, 88, 0.1); color: #30D158; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1/1; text-decoration: none; color: inherit; transition: 0.3s; }
+        .card:active { transform: scale(0.95); }
         .card i { font-size: 1.5rem; color: var(--accent); }
         .card-title { font-weight: 600; font-size: 1.1rem; margin-top: 10px; }
         .card-desc { color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; }
-
-        /* 特殊方塊：時鐘 */
-        .card-wide {
-            grid-column: span 2;
-            aspect-ratio: unset;
-            height: 100px;
-        }
-
-        .clock { font-size: 1.8rem; font-weight: 700; letter-spacing: -1px; }
+        .card-wide { grid-column: span 2; aspect-ratio: unset; height: 100px; }
+        .clock { font-size: 1.8rem; font-weight: 700; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="profile">
         <div class="avatar"><i class="fas fa-user-shield"></i></div>
         <h1 style="margin: 10px 0 5px; font-size: 1.5rem;">Digital Terminal</h1>
-        <div class="status-badge"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> System Encrypted</div>
+        <div class="status-badge"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> System Active</div>
     </div>
-
     <div class="grid">
         <div class="card card-wide">
             <div id="date-display" style="color: var(--accent); font-size: 0.8rem; font-weight: 600;">LOADING...</div>
             <div id="clock-display" class="clock">00:00:00</div>
         </div>
-
         <a href="assets/index.html" class="card">
             <i class="fas fa-vault"></i>
             <div>
@@ -134,43 +41,16 @@
                 <div class="card-desc">Financial Management</div>
             </div>
         </a>
-
-        <div class="card" onclick="alert('Module loading...')">
-            <i class="fas fa-project-diagram"></i>
-            <div>
-                <div class="card-title">Nodes</div>
-                <div class="card-desc">System Infrastructure</div>
-            </div>
-        </div>
-
-        <div class="card" onclick="alert('Update check completed.')">
-            <i class="fas fa-microchip"></i>
-            <div>
-                <div class="card-title">Kernel</div>
-                <div class="card-desc">v2.4.0-stable</div>
-            </div>
-        </div>
-
-        <div class="card" onclick="window.location.href='https://github.com'">
-            <i class="fab fa-github"></i>
-            <div>
-                <div class="card-title">GitHub</div>
-                <div class="card-desc">Source Repository</div>
-            </div>
-        </div>
+        <div class="card" onclick="alert('Checking Kernel...')"><i class="fas fa-microchip"></i><div><div class="card-title">Kernel</div><div class="card-desc">v2.4.0-stable</div></div></div>
     </div>
 </div>
-
 <script>
     function updateClock() {
         const now = new Date();
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('date-display').innerText = now.toLocaleDateString('en-US', options).toUpperCase();
+        document.getElementById('date-display').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
         document.getElementById('clock-display').innerText = now.toLocaleTimeString('en-US', { hour12: false });
     }
-    setInterval(updateClock, 1000);
-    updateClock();
+    setInterval(updateClock, 1000); updateClock();
 </script>
-
 </body>
 </html>
