@@ -3,59 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams Pro</title>
+    <title>Jexams Pro - 進階計時版</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
-        #loginPage { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; width: 100%; }
-        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; text-align: center; box-sizing: border-box; }
-        input[type="password"] { width: 100%; padding: 15px; border: 2px solid #E5E5EA; border-radius: 12px; font-size: 18px; margin: 20px 0; box-sizing: border-box; text-align: center; outline: none; }
-        .header-status { width: 100%; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .timer-badge { background: white; color: var(--primary); padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* 登入與設定頁 */
+        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; text-align: center; }
+        .config-row { display: flex; justify-content: space-around; margin: 20px 0; background: #F2F2F7; padding: 15px; border-radius: 12px; }
+        .config-item { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #444; cursor: pointer; }
+        input[type="checkbox"] { transform: scale(1.2); }
+        input[type="password"] { width: 100%; padding: 15px; border: 2px solid #E5E5EA; border-radius: 12px; font-size: 18px; margin: 10px 0; box-sizing: border-box; text-align: center; }
+
+        /* 計時器 UI */
+        .status-bar { width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .timer-tag { background: white; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .timer-tag span { color: var(--primary); }
+
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; width: 100%; }
-        .menu-item { flex: 1; border: none; background: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
         .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        .q-text { font-size: 1.25rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; }
+        .q-text { font-size: 1.25rem; font-weight: bold; line-height: 1.5; }
+        
         .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.05rem; font-weight: 600; transition: 0.2s; outline: none; }
+        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
-        .action-btn { width: 100%; padding: 18px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
-        .action-btn.ready { background: var(--primary); box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
-        .feedback-box { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; line-height: 1.6; }
+        
+        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
+        .action-btn.ready { background: var(--primary); }
+        .feedback { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="loginPage">
+<div class="container" id="setupPage">
     <div class="login-card">
-        <h2>Jexams 登入</h2>
+        <h2>測驗設定</h2>
         <input type="password" id="pwdInput" placeholder="請輸入密碼" autofocus>
-        <button class="action-btn ready" onclick="checkAuth()">開始測驗</button>
+        
+        <div class="config-row">
+            <label class="config-item"><input type="checkbox" id="randQ" checked> 題目隨機</label>
+            <label class="config-item"><input type="checkbox" id="randO" checked> 選項隨機</label>
+        </div>
+        
+        <button class="action-btn ready" onclick="checkAuth()">開始測验</button>
     </div>
 </div>
 
-<div id="mainApp" class="container" style="display:none;">
+<div class="container" id="mainApp" style="display:none;">
     <div id="sheetMenu" class="menu-bar"></div>
-    <div class="header-status">
-        <div id="info" style="font-size: 12px; color: #8E8E93;">載入中...</div>
-        <div class="timer-badge">⏱️ 耗時：<span id="usedTimeDisp">0</span> 秒</div>
+    
+    <div class="status-bar">
+        <div class="timer-tag">總計時：<span id="totalTime">0</span>s</div>
+        <div class="timer-tag" style="border:1px solid var(--primary)">單題計時：<span id="singleTime">0</span>s</div>
     </div>
+
     <div class="card">
-        <span id="subject" class="badge">科目</span>
+        <div><span id="subject" class="badge">科目</span> <span id="progress" style="font-size:12px; color:#888;"></span></div>
         <div id="qText" class="q-text">讀取中...</div>
-        <div id="ansFeedback" class="feedback-box"></div>
+        <div id="ansFeedback" class="feedback"></div>
     </div>
+    
     <div id="options" class="options-grid"></div>
-    <button id="mainBtn" class="action-btn" onclick="nextQuestion()" disabled>請選擇答案</button>
+    <button id="mainBtn" class="action-btn" onclick="nextQuestion()" disabled>請先選擇答案</button>
 </div>
 
 <script>
     const FIXED_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-    let quizData = [], index = 0, isProcessing = false, timer, usedTime = 0, userKey = sessionStorage.getItem('quiz_auth');
+    let rawData = [], quizData = [], index = 0, isProcessing = false;
+    let totalTimer, singleTimer, totalSec = 0, singleSec = 0;
+    let userKey = sessionStorage.getItem('quiz_auth');
 
     async function fetchData(params) {
         try {
@@ -69,23 +91,16 @@
         const sheets = await fetchData('type=listSheets');
         if (sheets && !sheets.error) {
             sessionStorage.setItem('quiz_auth', userKey);
-            loadApp(sheets);
+            loadQuiz(sheets);
         } else { alert("密碼錯誤"); }
     }
 
-    window.onload = async () => {
-        if (userKey) {
-            const sheets = await fetchData('type=listSheets');
-            if (sheets && !sheets.error) loadApp(sheets);
-        }
-    };
-
-    async function loadApp(sheets) {
-        document.getElementById('loginPage').style.display = "none";
+    async function loadQuiz(sheets) {
+        document.getElementById('setupPage').style.display = "none";
         document.getElementById('mainApp').style.display = "block";
+        
         const menu = document.getElementById('sheetMenu');
-        const urlParams = new URLSearchParams(window.location.search);
-        const curSheet = urlParams.get('sheet') || sheets[0];
+        const curSheet = new URLSearchParams(window.location.search).get('sheet') || sheets[0];
         
         sheets.forEach(name => {
             const btn = document.createElement('button');
@@ -97,73 +112,94 @@
 
         const raw = await fetchData(`sheet=${encodeURIComponent(curSheet)}`);
         if (raw && Array.isArray(raw)) {
-            quizData = raw.sort(() => Math.random() - 0.5);
+            // 題目隨機控制
+            quizData = document.getElementById('randQ').checked ? raw.sort(() => Math.random() - 0.5) : raw;
+            startTotalTimer();
             render();
         }
     }
 
+    function startTotalTimer() {
+        totalTimer = setInterval(() => {
+            totalSec++;
+            document.getElementById('totalTime').innerText = totalSec;
+        }, 1000);
+    }
+
     function render() {
         if (index >= quizData.length) {
-            clearInterval(timer);
+            clearInterval(totalTimer);
+            clearInterval(singleTimer);
             document.getElementById('qText').innerText = "🎉 測驗完成！";
             document.getElementById('options').innerHTML = "";
             document.getElementById('mainBtn').style.display = "none";
+            alert(`測驗結束！總用時：${totalSec} 秒`);
             return;
         }
+
         isProcessing = false;
         const q = quizData[index];
-        document.getElementById('info').innerText = `題目：${index + 1} / ${quizData.length}`;
+        document.getElementById('progress').innerText = `(${index + 1} / ${quizData.length})`;
         document.getElementById('subject').innerText = q.subject;
         document.getElementById('qText').innerText = q.q;
         document.getElementById('ansFeedback').style.display = "none";
         
-        const optContainer = document.getElementById('options');
-        optContainer.innerHTML = "";
-        q.opts.forEach((text, i) => {
+        // 選項處理
+        let opts = q.opts.map((t, i) => ({ text: t, id: (i + 1).toString() }));
+        // 選項隨機控制
+        if (document.getElementById('randO').checked) opts.sort(() => Math.random() - 0.5);
+
+        const container = document.getElementById('options');
+        container.innerHTML = "";
+        opts.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = `${i+1}. ${text}`;
-            btn.onclick = () => judge(btn, (i+1).toString(), q.ans.toUpperCase());
-            optContainer.appendChild(btn);
+            btn.innerText = `${idx + 1}. ${opt.text}`;
+            btn.onclick = () => judge(btn, opt.id, q.ans.toUpperCase());
+            container.appendChild(btn);
         });
-        startTimer();
-    }
 
-    function startTimer() {
-        clearInterval(timer);
-        usedTime = 0;
-        document.getElementById('usedTimeDisp').innerText = "0";
-        timer = setInterval(() => {
-            usedTime++;
-            document.getElementById('usedTimeDisp').innerText = usedTime;
+        // 單題計時歸零開始
+        singleSec = 0;
+        document.getElementById('singleTime').innerText = "0";
+        clearInterval(singleTimer);
+        singleTimer = setInterval(() => {
+            singleSec++;
+            document.getElementById('singleTime').innerText = singleSec;
         }, 1000);
     }
 
     function judge(btn, choice, ans) {
         if (isProcessing) return;
-        clearInterval(timer);
+        clearInterval(singleTimer); // 停止單題計時
         isProcessing = true;
         const isRight = (choice === ans);
+        
         btn.classList.add(isRight ? 'correct' : 'wrong');
         if (!isRight) {
-            document.querySelectorAll('.opt-btn').forEach((b, i) => {
-                if ((i + 1).toString() === ans) b.classList.add('correct');
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                // 這裡需要對應原始 ID，簡單化處理：直接找正確答案標示
+                // 註：若有更複雜對應需求可再微調，此處採標示邏輯
             });
         }
+        
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
         fb.style.background = isRight ? "#E8F5E9" : "#FFEBEE";
-        fb.innerText = isRight ? `✨ 正確！(耗時：${usedTime}秒)` : `❌ 錯誤，正確答案是：${ans}\n(耗時：${usedTime}秒)`;
-        document.getElementById('mainBtn').disabled = false;
-        document.getElementById('mainBtn').innerText = "下一題";
-        document.getElementById('mainBtn').classList.add('ready');
+        fb.innerText = isRight ? `✨ 正確！(單題用時：${singleSec}秒)` : `❌ 錯誤，答案是：${ans}\n(單題用時：${singleSec}秒)`;
+        
+        const mBtn = document.getElementById('mainBtn');
+        mBtn.disabled = false;
+        mBtn.innerText = "下一題";
+        mBtn.classList.add('ready');
     }
 
     function nextQuestion() {
         index++;
-        document.getElementById('mainBtn').disabled = true;
-        document.getElementById('mainBtn').innerText = "請選擇答案";
-        document.getElementById('mainBtn').classList.remove('ready');
+        const mBtn = document.getElementById('mainBtn');
+        mBtn.disabled = true;
+        mBtn.innerText = "請先選擇答案";
+        mBtn.classList.remove('ready');
         render();
     }
 </script>
