@@ -3,109 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams Pro - 專業測驗系統</title>
+    <title>Jexams Pro</title>
     <style>
-        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; --warning: #FF9500; }
+        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
-        
-        /* 登入頁面樣式 */
         #loginPage { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; width: 100%; }
-        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; text-align: center; }
-        input[type="password"] { width: 100%; padding: 15px; border: 2px solid #E5E5EA; border-radius: 12px; font-size: 18px; margin: 20px 0; box-sizing: border-box; }
-        
-        /* 計時器 UI */
-        .timer-box { width: 100%; margin-bottom: 15px; background: white; padding: 12px; border-radius: 12px; box-sizing: border-box; }
-        .timer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        #timerBar { height: 8px; width: 100%; background: var(--success); border-radius: 4px; transition: width 1s linear; }
-
+        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; text-align: center; box-sizing: border-box; }
+        input[type="password"] { width: 100%; padding: 15px; border: 2px solid #E5E5EA; border-radius: 12px; font-size: 18px; margin: 20px 0; box-sizing: border-box; text-align: center; outline: none; }
+        .header-status { width: 100%; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .timer-badge { background: white; color: var(--primary); padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; width: 100%; }
-        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
-        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
-        .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; }
+        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
+        .q-text { font-size: 1.25rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; }
         .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; width: 100%; }
-        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
+        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.05rem; font-weight: 600; transition: 0.2s; outline: none; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
-        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
-        .action-btn.ready { background: var(--primary); }
-        .feedback-box { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; }
+        .action-btn { width: 100%; padding: 18px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
+        .action-btn.ready { background: var(--primary); box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+        .feedback-box { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-<div class="container" id="mainApp" style="display:none;">
-    <div id="sheetMenu" class="menu-bar"></div>
-    <div class="timer-box">
-        <div class="timer-header">
-            <span style="font-size:12px; color:#666;">⏳ 剩餘：<span id="timeLeft">30</span>s</span>
-            <span id="usedTimeDisp" style="font-size:12px; color:var(--primary);">耗時：0s</span>
-        </div>
-        <div style="background:#E5E5EA; border-radius:4px;"><div id="timerBar"></div></div>
-    </div>
-    <div id="info" style="font-size: 12px; color: #8E8E93; margin-bottom: 8px;"></div>
-    <div class="card">
-        <div><span id="subject" class="badge">科目</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
-        <div id="qText" class="q-text">讀取中...</div>
-        <div id="ansFeedback" class="feedback-box"></div>
-    </div>
-    <div id="options" class="options-grid"></div>
-    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>請先選擇答案</button>
-</div>
-
-<div class="container" id="loginPage">
+<div id="loginPage">
     <div class="login-card">
-        <h2>Jexams 系統登入</h2>
-        <p style="color:#666;">請輸入密碼以存取雲端題目</p>
-        <input type="password" id="pwdInput" placeholder="請輸入 123456" autofocus>
+        <h2>Jexams 登入</h2>
+        <input type="password" id="pwdInput" placeholder="請輸入密碼" autofocus>
         <button class="action-btn ready" onclick="checkAuth()">開始測驗</button>
     </div>
 </div>
 
+<div id="mainApp" class="container" style="display:none;">
+    <div id="sheetMenu" class="menu-bar"></div>
+    <div class="header-status">
+        <div id="info" style="font-size: 12px; color: #8E8E93;">載入中...</div>
+        <div class="timer-badge">⏱️ 耗時：<span id="usedTimeDisp">0</span> 秒</div>
+    </div>
+    <div class="card">
+        <span id="subject" class="badge">科目</span>
+        <div id="qText" class="q-text">讀取中...</div>
+        <div id="ansFeedback" class="feedback-box"></div>
+    </div>
+    <div id="options" class="options-grid"></div>
+    <button id="mainBtn" class="action-btn" onclick="nextQuestion()" disabled>請選擇答案</button>
+</div>
+
 <script>
-    const BASE_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-    const TIMER_LIMIT = 30;
-    let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
-    let timerInterval, currentTime = TIMER_LIMIT, usedTime = 0;
-    let userKey = sessionStorage.getItem('quiz_auth');
+    const FIXED_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    let quizData = [], index = 0, isProcessing = false, timer, usedTime = 0, userKey = sessionStorage.getItem('quiz_auth');
 
-    // 登入檢查
-    async function checkAuth() {
-        const input = document.getElementById('pwdInput').value;
-        if (!input) return alert("請輸入密碼");
-        userKey = input;
-        const test = await safeFetch('type=listSheets');
-        if (test && !test.error) {
-            sessionStorage.setItem('quiz_auth', userKey);
-            initApp(test);
-        } else {
-            alert("密碼錯誤或權限不足");
-        }
-    }
-
-    async function safeFetch(params) {
+    async function fetchData(params) {
         try {
-            // 強制加上時間戳記 t=... 避開快取
-            const resp = await fetch(`${BASE_URL}?pwd=${encodeURIComponent(userKey)}&t=${new Date().getTime()}&${params}`);
+            const resp = await fetch(`${FIXED_URL}?pwd=${encodeURIComponent(userKey)}&t=${Date.now()}&${params}`);
             return await resp.json();
         } catch (e) { return {error: "連線失敗"}; }
     }
 
+    async function checkAuth() {
+        userKey = document.getElementById('pwdInput').value;
+        const sheets = await fetchData('type=listSheets');
+        if (sheets && !sheets.error) {
+            sessionStorage.setItem('quiz_auth', userKey);
+            loadApp(sheets);
+        } else { alert("密碼錯誤"); }
+    }
+
     window.onload = async () => {
         if (userKey) {
-            const test = await safeFetch('type=listSheets');
-            if (test && !test.error) initApp(test);
+            const sheets = await fetchData('type=listSheets');
+            if (sheets && !sheets.error) loadApp(sheets);
         }
     };
 
-    async function initApp(sheets) {
+    async function loadApp(sheets) {
         document.getElementById('loginPage').style.display = "none";
         document.getElementById('mainApp').style.display = "block";
         const menu = document.getElementById('sheetMenu');
-        const curSheet = new URLSearchParams(window.location.search).get('sheet') || sheets[0];
+        const urlParams = new URLSearchParams(window.location.search);
+        const curSheet = urlParams.get('sheet') || sheets[0];
+        
         sheets.forEach(name => {
             const btn = document.createElement('button');
             btn.className = `menu-item ${name === curSheet ? 'active' : ''}`;
@@ -113,93 +94,77 @@
             btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
             menu.appendChild(btn);
         });
-        rawData = await safeFetch(`sheet=${encodeURIComponent(curSheet)}`);
-        if (rawData) {
-            quizData = rawData.sort(() => Math.random() - 0.5);
+
+        const raw = await fetchData(`sheet=${encodeURIComponent(curSheet)}`);
+        if (raw && Array.isArray(raw)) {
+            quizData = raw.sort(() => Math.random() - 0.5);
             render();
         }
     }
 
-    function startTimer() {
-        clearInterval(timerInterval);
-        currentTime = TIMER_LIMIT;
-        usedTime = 0;
-        timerInterval = setInterval(() => {
-            currentTime--;
-            usedTime++;
-            document.getElementById('timeLeft').innerText = currentTime;
-            document.getElementById('usedTimeDisp').innerText = `耗時：${usedTime}s`;
-            document.getElementById('timerBar').style.width = (currentTime/TIMER_LIMIT)*100 + "%";
-            if (currentTime <= 0) {
-                clearInterval(timerInterval);
-                handleTimeOut();
-            }
-        }, 1000);
-    }
-
-    function handleTimeOut() {
-        if (isProcessing) return;
-        isProcessing = true;
-        const fb = document.getElementById('ansFeedback');
-        fb.style.display = "block";
-        fb.style.background = "#FFF3E0";
-        fb.innerText = "⏰ 時間到！自動記錯。";
-        recordError(quizData[index], " (逾時)");
-        updateBtn(true, "下一題");
-    }
-
     function render() {
         if (index >= quizData.length) {
-            clearInterval(timerInterval);
-            document.getElementById('qText').innerText = "測驗完成！";
+            clearInterval(timer);
+            document.getElementById('qText').innerText = "🎉 測驗完成！";
             document.getElementById('options').innerHTML = "";
+            document.getElementById('mainBtn').style.display = "none";
             return;
         }
-        const q = quizData[index];
         isProcessing = false;
-        document.getElementById('info').innerText = `題號：${index + 1} / ${quizData.length}`;
+        const q = quizData[index];
+        document.getElementById('info').innerText = `題目：${index + 1} / ${quizData.length}`;
         document.getElementById('subject').innerText = q.subject;
         document.getElementById('qText').innerText = q.q;
         document.getElementById('ansFeedback').style.display = "none";
-        document.getElementById('options').innerHTML = "";
         
-        q.opts.forEach((t, i) => {
+        const optContainer = document.getElementById('options');
+        optContainer.innerHTML = "";
+        q.opts.forEach((text, i) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = `${i+1}. ${t}`;
-            btn.onclick = () => {
-                if(isProcessing) return;
-                clearInterval(timerInterval);
-                judge(btn, (i+1).toString(), q.ans.toString().toUpperCase());
-            };
-            document.getElementById('options').appendChild(btn);
+            btn.innerText = `${i+1}. ${text}`;
+            btn.onclick = () => judge(btn, (i+1).toString(), q.ans.toUpperCase());
+            optContainer.appendChild(btn);
         });
         startTimer();
     }
 
-    function judge(btn, id, ans) {
+    function startTimer() {
+        clearInterval(timer);
+        usedTime = 0;
+        document.getElementById('usedTimeDisp').innerText = "0";
+        timer = setInterval(() => {
+            usedTime++;
+            document.getElementById('usedTimeDisp').innerText = usedTime;
+        }, 1000);
+    }
+
+    function judge(btn, choice, ans) {
+        if (isProcessing) return;
+        clearInterval(timer);
         isProcessing = true;
-        const correct = (id === ans);
-        btn.classList.add(correct ? 'correct' : 'wrong');
-        if (!correct) recordError(quizData[index]);
-        document.getElementById('ansFeedback').style.display = "block";
-        document.getElementById('ansFeedback').innerText = correct ? "✨ 正確" : "❌ 錯誤，正確答案是：" + ans;
-        updateBtn(true, "下一題");
+        const isRight = (choice === ans);
+        btn.classList.add(isRight ? 'correct' : 'wrong');
+        if (!isRight) {
+            document.querySelectorAll('.opt-btn').forEach((b, i) => {
+                if ((i + 1).toString() === ans) b.classList.add('correct');
+            });
+        }
+        const fb = document.getElementById('ansFeedback');
+        fb.style.display = "block";
+        fb.style.background = isRight ? "#E8F5E9" : "#FFEBEE";
+        fb.innerText = isRight ? `✨ 正確！(耗時：${usedTime}秒)` : `❌ 錯誤，正確答案是：${ans}\n(耗時：${usedTime}秒)`;
+        document.getElementById('mainBtn').disabled = false;
+        document.getElementById('mainBtn').innerText = "下一題";
+        document.getElementById('mainBtn').classList.add('ready');
     }
 
-    function updateBtn(ready, text) {
-        const b = document.getElementById('mainBtn');
-        b.disabled = !ready; b.innerText = text; b.classList.toggle('ready', ready);
-    }
-
-    function handleAction() {
+    function nextQuestion() {
         index++;
+        document.getElementById('mainBtn').disabled = true;
+        document.getElementById('mainBtn').innerText = "請選擇答案";
+        document.getElementById('mainBtn').classList.remove('ready');
         render();
-    }
-
-    async function recordError(q, suffix = "") {
-        // 傳送 usedTime 到後端
-        fetch(`${BASE_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify({...q, q: q.q + suffix, usedTime: usedTime}))}`);
     }
 </script>
 </body>
