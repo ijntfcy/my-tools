@@ -3,80 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams Pro - 進階計時版</title>
+    <title>Jexams Pro - 最終功能版</title>
     <style>
-        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
+        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; --warning: #FF9500; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
         
-        /* 登入與設定頁 */
-        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; text-align: center; }
-        .config-row { display: flex; justify-content: space-around; margin: 20px 0; background: #F2F2F7; padding: 15px; border-radius: 12px; }
-        .config-item { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #444; cursor: pointer; }
-        input[type="checkbox"] { transform: scale(1.2); }
-        input[type="password"] { width: 100%; padding: 15px; border: 2px solid #E5E5EA; border-radius: 12px; font-size: 18px; margin: 10px 0; box-sizing: border-box; text-align: center; }
+        /* 登入與設定 */
+        .card-box { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; text-align: center; }
+        .config-group { display: flex; justify-content: center; gap: 20px; margin: 20px 0; padding: 15px; background: #F8F8FA; border-radius: 12px; }
+        .config-item { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
 
         /* 計時器 UI */
-        .status-bar { width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .timer-tag { background: white; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .timer-tag span { color: var(--primary); }
+        .timer-row { width: 100%; display: flex; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+        .timer-chip { flex: 1; background: white; padding: 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .timer-label { font-size: 11px; color: #8E8E93; display: block; margin-bottom: 2px; }
+        .timer-val { font-size: 16px; font-weight: 800; color: var(--primary); }
 
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; width: 100%; }
-        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
-        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        .q-text { font-size: 1.25rem; font-weight: bold; line-height: 1.5; }
+        .quiz-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        .badge-row { margin-bottom: 12px; }
+        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
+        .q-text { font-size: 1.2rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; }
         
-        .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; }
+        .options-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 16px; text-align: left; cursor: pointer; font-size: 1.05rem; font-weight: 600; transition: 0.2s; }
+        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
         
-        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
-        .action-btn.ready { background: var(--primary); }
-        .feedback { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; }
+        .action-btn { width: 100%; padding: 18px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; transition: 0.3s; }
+        .action-btn.ready { background: var(--primary); box-shadow: 0 5px 15px rgba(0,122,255,0.3); }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; white-space: pre-line; }
     </style>
 </head>
 <body>
 
 <div class="container" id="setupPage">
-    <div class="login-card">
-        <h2>測驗設定</h2>
-        <input type="password" id="pwdInput" placeholder="請輸入密碼" autofocus>
+    <div class="card-box">
+        <h2 style="margin-top:0">測驗登入</h2>
+        <input type="password" id="pwdInput" placeholder="請輸入密碼 (123456)" autofocus>
         
-        <div class="config-row">
+        <div class="config-group">
             <label class="config-item"><input type="checkbox" id="randQ" checked> 題目隨機</label>
             <label class="config-item"><input type="checkbox" id="randO" checked> 選項隨機</label>
         </div>
         
-        <button class="action-btn ready" onclick="checkAuth()">開始測验</button>
+        <button class="action-btn ready" onclick="checkAuth()">開始測驗</button>
     </div>
 </div>
 
 <div class="container" id="mainApp" style="display:none;">
     <div id="sheetMenu" class="menu-bar"></div>
     
-    <div class="status-bar">
-        <div class="timer-tag">總計時：<span id="totalTime">0</span>s</div>
-        <div class="timer-tag" style="border:1px solid var(--primary)">單題計時：<span id="singleTime">0</span>s</div>
+    <div class="timer-row">
+        <div class="timer-chip">
+            <span class="timer-label">TOTAL 總計時</span>
+            <span class="timer-val" id="totalTime">0</span><small>s</small>
+        </div>
+        <div class="timer-chip" style="border: 1px solid #D1D1D6;">
+            <span class="timer-label">SINGLE 單題計時</span>
+            <span class="timer-val" id="singleTime">0</span><small>s</small>
+        </div>
     </div>
 
-    <div class="card">
-        <div><span id="subject" class="badge">科目</span> <span id="progress" style="font-size:12px; color:#888;"></span></div>
+    <div class="quiz-card">
+        <div class="badge-row">
+            <span id="subject" class="badge">科目</span>
+            <span id="qType" class="badge" style="background:#F2F2F7; color:#666;">單選題</span>
+            <span id="progress" style="font-size:12px; color:#8E8E93; float:right;"></span>
+        </div>
         <div id="qText" class="q-text">讀取中...</div>
         <div id="ansFeedback" class="feedback"></div>
     </div>
     
     <div id="options" class="options-grid"></div>
-    <button id="mainBtn" class="action-btn" onclick="nextQuestion()" disabled>請先選擇答案</button>
+    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>請先選擇答案</button>
 </div>
 
 <script>
     const FIXED_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-    let rawData = [], quizData = [], index = 0, isProcessing = false;
-    let totalTimer, singleTimer, totalSec = 0, singleSec = 0;
+    let quizData = [], index = 0, isProcessing = false;
+    let totalSec = 0, singleSec = 0, totalTimer, singleTimer;
+    let selectedIds = [], currentAns = "";
     let userKey = sessionStorage.getItem('quiz_auth');
 
     async function fetchData(params) {
@@ -88,20 +101,19 @@
 
     async function checkAuth() {
         userKey = document.getElementById('pwdInput').value;
-        const sheets = await fetchData('type=listSheets');
-        if (sheets && !sheets.error) {
+        const test = await fetchData('type=listSheets');
+        if (test && !test.error) {
             sessionStorage.setItem('quiz_auth', userKey);
-            loadQuiz(sheets);
+            initQuiz(test);
         } else { alert("密碼錯誤"); }
     }
 
-    async function loadQuiz(sheets) {
+    async function initQuiz(sheets) {
         document.getElementById('setupPage').style.display = "none";
         document.getElementById('mainApp').style.display = "block";
         
         const menu = document.getElementById('sheetMenu');
         const curSheet = new URLSearchParams(window.location.search).get('sheet') || sheets[0];
-        
         sheets.forEach(name => {
             const btn = document.createElement('button');
             btn.className = `menu-item ${name === curSheet ? 'active' : ''}`;
@@ -112,7 +124,6 @@
 
         const raw = await fetchData(`sheet=${encodeURIComponent(curSheet)}`);
         if (raw && Array.isArray(raw)) {
-            // 題目隨機控制
             quizData = document.getElementById('randQ').checked ? raw.sort(() => Math.random() - 0.5) : raw;
             startTotalTimer();
             render();
@@ -120,88 +131,114 @@
     }
 
     function startTotalTimer() {
-        totalTimer = setInterval(() => {
-            totalSec++;
-            document.getElementById('totalTime').innerText = totalSec;
-        }, 1000);
+        totalTimer = setInterval(() => { totalSec++; document.getElementById('totalTime').innerText = totalSec; }, 1000);
     }
 
     function render() {
         if (index >= quizData.length) {
-            clearInterval(totalTimer);
-            clearInterval(singleTimer);
+            clearInterval(totalTimer); clearInterval(singleTimer);
             document.getElementById('qText').innerText = "🎉 測驗完成！";
             document.getElementById('options').innerHTML = "";
             document.getElementById('mainBtn').style.display = "none";
-            alert(`測驗結束！總用時：${totalSec} 秒`);
             return;
         }
 
         isProcessing = false;
+        selectedIds = [];
         const q = quizData[index];
-        document.getElementById('progress').innerText = `(${index + 1} / ${quizData.length})`;
+        currentAns = q.ans.toString().replace(/，/g, ',').toUpperCase().trim();
+        const isMulti = currentAns.includes(",");
+
+        document.getElementById('progress').innerText = `${index + 1} / ${quizData.length}`;
         document.getElementById('subject').innerText = q.subject;
+        document.getElementById('qType').innerText = isMulti ? "多選題" : "單選/是非題";
         document.getElementById('qText').innerText = q.q;
         document.getElementById('ansFeedback').style.display = "none";
         
-        // 選項處理
         let opts = q.opts.map((t, i) => ({ text: t, id: (i + 1).toString() }));
-        // 選項隨機控制
         if (document.getElementById('randO').checked) opts.sort(() => Math.random() - 0.5);
 
         const container = document.getElementById('options');
         container.innerHTML = "";
-        opts.forEach((opt, idx) => {
+        opts.forEach((opt) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = `${idx + 1}. ${opt.text}`;
-            btn.onclick = () => judge(btn, opt.id, q.ans.toUpperCase());
+            btn.innerText = opt.text;
+            btn.dataset.id = opt.id;
+            btn.onclick = () => selectOption(btn, isMulti);
             container.appendChild(btn);
         });
 
-        // 單題計時歸零開始
+        updateBtn(false, isMulti ? "請選擇答案" : "請選擇答案");
+        resetSingleTimer();
+    }
+
+    function resetSingleTimer() {
         singleSec = 0;
         document.getElementById('singleTime').innerText = "0";
         clearInterval(singleTimer);
-        singleTimer = setInterval(() => {
-            singleSec++;
-            document.getElementById('singleTime').innerText = singleSec;
-        }, 1000);
+        singleTimer = setInterval(() => { singleSec++; document.getElementById('singleTime').innerText = singleSec; }, 1000);
     }
 
-    function judge(btn, choice, ans) {
+    function selectOption(btn, isMulti) {
         if (isProcessing) return;
-        clearInterval(singleTimer); // 停止單題計時
-        isProcessing = true;
-        const isRight = (choice === ans);
-        
-        btn.classList.add(isRight ? 'correct' : 'wrong');
-        if (!isRight) {
-            document.querySelectorAll('.opt-btn').forEach(b => {
-                // 這裡需要對應原始 ID，簡單化處理：直接找正確答案標示
-                // 註：若有更複雜對應需求可再微調，此處採標示邏輯
-            });
+        const id = btn.dataset.id;
+
+        if (isMulti) {
+            btn.classList.toggle('selected');
+            selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
+            updateBtn(selectedIds.length > 0, "送出答案");
+        } else {
+            selectedIds = [id];
+            judge();
         }
-        
+    }
+
+    function judge() {
+        clearInterval(singleTimer);
+        isProcessing = true;
+        const correctArr = currentAns.split(',').sort();
+        const userArr = selectedIds.sort();
+        const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+
+        document.querySelectorAll('.opt-btn').forEach(btn => {
+            const id = btn.dataset.id;
+            if (correctArr.includes(id)) btn.classList.add('correct');
+            if (userArr.includes(id) && !correctArr.includes(id)) btn.classList.add('wrong');
+        });
+
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
-        fb.style.background = isRight ? "#E8F5E9" : "#FFEBEE";
-        fb.innerText = isRight ? `✨ 正確！(單題用時：${singleSec}秒)` : `❌ 錯誤，答案是：${ans}\n(單題用時：${singleSec}秒)`;
-        
-        const mBtn = document.getElementById('mainBtn');
-        mBtn.disabled = false;
-        mBtn.innerText = "下一題";
-        mBtn.classList.add('ready');
+        fb.style.background = isCorrect ? "#E8F5E9" : "#FFEBEE";
+        fb.style.color = isCorrect ? "#2E7D32" : "#C62828";
+        fb.innerText = isCorrect ? `✨ 正確！\n(此題耗時：${singleSec}秒)` : `❌ 錯誤！正確答案：${currentAns}\n(此題耗時：${singleSec}秒)`;
+
+        updateBtn(true, "下一題");
     }
 
-    function nextQuestion() {
-        index++;
-        const mBtn = document.getElementById('mainBtn');
-        mBtn.disabled = true;
-        mBtn.innerText = "請先選擇答案";
-        mBtn.classList.remove('ready');
-        render();
+    function handleAction() {
+        const btnText = document.getElementById('mainBtn').innerText;
+        if (btnText === "送出答案") {
+            judge();
+        } else if (btnText === "下一題") {
+            index++;
+            render();
+        }
     }
+
+    function updateBtn(ready, text) {
+        const btn = document.getElementById('mainBtn');
+        btn.disabled = !ready;
+        btn.innerText = text;
+        btn.classList.toggle('ready', ready);
+    }
+
+    window.onload = async () => {
+        if (userKey) {
+            const test = await fetchData('type=listSheets');
+            if (test && !test.error) initQuiz(test);
+        }
+    };
 </script>
 </body>
 </html>
