@@ -3,65 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Asset</title>
+    <title>My Beautiful Assets</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #F9F9F7; --card: #FFFFFF; --accent: #A68E74; --text: #4A4A4A; --shadow: rgba(166, 142, 116, 0.1); }
-        body { background: var(--bg); margin: 0; color: var(--text); font-family: sans-serif; }
-        .header { background: white; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #EEE; position: sticky; top: 0; z-index: 10; }
-        .btn { background: white; border: 1px solid #EEE; width: 40px; height: 40px; border-radius: 50%; color: var(--accent); box-shadow: 0 4px 8px var(--shadow); }
+        :root { 
+            --bg: #F0F2F5; 
+            --text: #2D3436;
+            --accent: #6C5CE7;
+            /* 類別配色 */
+            --color-saving: #E8F5E9; /* 活存-綠 */
+            --color-fixed: #FFF9C4;  /* 定存-黃 */
+            --color-foreign: #E3F2FD; /* 外幣-藍 */
+            --color-stock: #FCE4EC;   /* 證券-紅 */
+        }
+        
+        body { background: var(--bg); margin: 0; color: var(--text); font-family: "PingFang TC", sans-serif; }
+        
+        /* 頂部導覽列 */
+        .header { 
+            background: white; padding: 20px; display: flex; align-items: center; justify-content: space-between; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;
+        }
+        .header-title { font-weight: 800; font-size: 1.2rem; color: var(--accent); }
+        .btn-round { border: none; background: #F0F2F5; width: 45px; height: 45px; border-radius: 50%; color: var(--text); cursor: pointer; }
+
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
-        .card { background: white; border-radius: 25px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px var(--shadow); border: 1px solid #FDFBF9; }
-        .bank-name { font-weight: 700; font-size: 1.1rem; color: #3D3D3D; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .data-row { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px dashed #F2EEE9; font-size: 0.9rem; }
-        .val-primary { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
-        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal { background: white; padding: 40px; border-radius: 35px; text-align: center; width: 80%; max-width: 300px; box-shadow: 0 15px 35px var(--shadow); }
-        input { width: 100%; padding: 15px; margin: 20px 0; border: 1px solid #EEE; border-radius: 15px; text-align: center; font-size: 1.5rem; background: #FDFBF9; }
-        .btn-main { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: 700; }
+
+        /* ✨ 漂亮卡片核心設計 */
+        .card { 
+            border-radius: 35px; padding: 25px; margin-bottom: 25px; 
+            box-shadow: 10px 10px 20px #d1d9e6, -10px -10px 20px #ffffff; /* 輕微擬物化感 */
+            transition: 0.3s; position: relative; border: 2px solid white;
+        }
+
+        /* 根據類別自動變色 (透過 JS 注入) */
+        .type-活存 { background-color: var(--color-saving); }
+        .type-定存 { background-color: var(--color-fixed); }
+        .type-外幣 { background-color: var(--color-foreign); }
+        .type-證券 { background-color: var(--color-stock); }
+
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: flex-start; }
+        .bank-tag { background: white; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .category-tag { font-size: 0.75rem; font-weight: 600; opacity: 0.6; padding-top: 5px; }
+
+        /* 金額顯示：超漂亮大字體 */
+        .amount-box { margin-bottom: 15px; }
+        .amount-label { font-size: 0.8rem; opacity: 0.5; margin-bottom: 5px; }
+        .amount-value { font-size: 2rem; font-weight: 900; color: #2D3436; font-family: 'Lato', sans-serif; letter-spacing: -1px; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px; }
+        .info-item .label { font-size: 0.75rem; opacity: 0.5; display: block; }
+        .info-item .val { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+
+        /* 驗證畫面 */
+        .overlay { position: fixed; inset: 0; background: #F0F2F5; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .login-box { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 85%; max-width: 320px; box-shadow: 20px 20px 60px #d1d9e6; }
+        input { width: 100%; padding: 15px; margin: 25px 0; border: none; background: #F0F2F5; border-radius: 20px; text-align: center; font-size: 1.5rem; outline: none; box-shadow: inset 5px 5px 10px #d1d9e6; }
+        .btn-go { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 20px; font-weight: 800; box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3); }
+
+        /* 動態加載動畫 */
+        .loading-pulse { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; margin: 50px auto; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.8); opacity: 0.5; } }
     </style>
 </head>
 <body>
+
 <div id="loginOverlay" class="overlay">
-    <div class="modal">
-        <i class="fas fa-leaf" style="font-size: 2rem; color: var(--accent);"></i>
-        <h2 style="margin: 15px 0 5px;">Welcome</h2>
-        <input type="password" id="pwd" placeholder="••••" inputmode="numeric">
-        <button class="btn-main" onclick="login()">解鎖帳本</button>
+    <div class="login-box">
+        <div style="font-size: 3rem; margin-bottom: 10px;">🍯</div>
+        <h2 style="margin: 0; letter-spacing: 1px;">甜蜜帳本</h2>
+        <input type="password" id="pass" placeholder="••••" inputmode="numeric">
+        <button class="btn-go" onclick="unlock()">進入控制台</button>
     </div>
 </div>
-<div id="header" class="header" style="display:none;">
-    <button class="btn" onclick="location.href='../index.html'"><i class="fas fa-home"></i></button>
-    <div style="font-weight:700;">我的資產</div>
-    <button class="btn" onclick="fetchData()"><i class="fas fa-sync-alt"></i></button>
+
+<div id="app" style="display:none;">
+    <div class="header">
+        <button class="btn-round" onclick="location.href='../index.html'"><i class="fas fa-arrow-left"></i></button>
+        <div class="header-title">ASSET OVERVIEW</div>
+        <button class="btn-round" onclick="fetchData()"><i class="fas fa-sync"></i></button>
+    </div>
+    <div id="dataList" class="container"></div>
 </div>
-<div id="dataList" class="container"></div>
+
 <script>
-    const API = "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec";
-    function login() {
-        const p = document.getElementById('pwd').value;
-        if(p) { sessionStorage.setItem('vault_pwd', p); showUI(); fetchData(); }
+    const API_URL = "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec";
+
+    function unlock() {
+        const p = document.getElementById('pass').value;
+        if(p) { sessionStorage.setItem('v_pwd', p); start(); }
     }
-    function showUI() { document.getElementById('loginOverlay').style.display='none'; document.getElementById('header').style.display='flex'; }
+
+    function start() {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        fetchData();
+    }
+
     async function fetchData() {
         const list = document.getElementById('dataList');
-        list.innerHTML = '<div style="text-align:center; margin-top:50px; color:#9B9B9B;">準備中...</div>';
-        const res = await fetch(`${API}?pwd=${sessionStorage.getItem('vault_pwd')}`);
-        const json = await res.json();
-        if(json.status === "success") render(json.headers, json.data);
+        list.innerHTML = '<div class="loading-pulse"></div>';
+        try {
+            const res = await fetch(`${API_URL}?pwd=${sessionStorage.getItem('v_pwd')}`);
+            const json = await res.json();
+            if(json.status === "success") render(json.headers, json.data);
+            else { alert("密碼錯誤"); location.reload(); }
+        } catch(e) { list.innerHTML = "連線失敗"; }
     }
+
     function render(headers, data) {
         document.getElementById('dataList').innerHTML = data.map(item => {
-            let rows = headers.map(h => {
-                let v = item[h];
-                if(h.includes('金額')) v = `<span class="val-primary">$ ${Number(String(v).replace(/[^0-9.-]/g,'')).toLocaleString()}</span>`;
-                if(h.includes('利率')) v = `<span style="color:#D9B08C; font-weight:700;">${(parseFloat(v)*100).toFixed(2)}%</span>`;
-                return `<div class="data-row"><span>${h}</span><span>${v}</span></div>`;
-            }).join('');
-            return `<div class="card"><div class="bank-name"><i class="fas fa-coffee"></i> ${item['帳戶名稱']}</div>${rows}</div>`;
+            const type = item['帳戶類別'] || '活存';
+            const amount = Number(String(item['金額']).replace(/[^0-9.-]/g,'')).toLocaleString();
+            const rate = (parseFloat(item['利率']) * 100).toFixed(2) + '%';
+            
+            // 剩下的資料動態生成
+            const otherInfo = headers.filter(h => !['帳戶名稱', '帳戶類別', '金額', '利率'].includes(h)).map(h => `
+                <div class="info-item">
+                    <span class="label">${h}</span>
+                    <span class="val">${item[h] || '-'}</span>
+                </div>
+            `).join('');
+
+            return `
+            <div class="card type-${type}">
+                <div class="card-header">
+                    <div>
+                        <div class="bank-tag">${item['帳戶名稱']}</div>
+                        <div class="category-tag">${type} / Fixed Rate</div>
+                    </div>
+                    <div style="font-size: 1.5rem;">${getEmoji(type)}</div>
+                </div>
+                <div class="amount-box">
+                    <div class="amount-label">Current Balance</div>
+                    <div class="amount-value">$ ${amount}</div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">年利率</span>
+                        <span class="val" style="color:#D4A017;">${rate}</span>
+                    </div>
+                    ${otherInfo}
+                </div>
+            </div>`;
         }).join('');
     }
-    if(sessionStorage.getItem('vault_pwd')) { showUI(); fetchData(); }
+
+    function getEmoji(type) {
+        const map = { '活存': '🌱', '定存': '🔒', '外幣': '✈️', '證券': '📈' };
+        return map[type] || '💰';
+    }
+
+    if(sessionStorage.getItem('v_pwd')) start();
 </script>
 </body>
 </html>
