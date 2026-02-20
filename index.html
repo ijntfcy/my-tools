@@ -3,182 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Daily Terminal</title>
+    <title>Hello Today</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #F9F9F7; /* 燕麥奶色背景 */
-            --card-bg: #FFFFFF;
-            --accent: #A68E74; /* 溫暖木質棕 */
-            --text-main: #4A4A4A;
-            --text-dim: #9B9B9B;
-            --border: #F2EEE9;
-            --shadow: rgba(166, 142, 116, 0.12);
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 480px;
-            padding: 50px 0;
-        }
-
-        /* 個人名片區：簡約優雅 */
-        .profile {
-            text-align: center;
-            margin-bottom: 45px;
-        }
-
-        .avatar {
-            width: 90px; height: 90px;
-            background: #FFFFFF;
-            border-radius: 32px; /* 大圓角 */
-            margin: 0 auto 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border);
-            font-size: 2.2rem;
-            color: var(--accent);
-            box-shadow: 0 10px 20px var(--shadow);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #FFFFFF;
-            color: var(--accent);
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 10px var(--shadow);
-        }
-
-        /* 網格系統：溫馨方塊 */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            width: 100%;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: none;
-            border-radius: 32px; /* 柔和圓角 */
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            aspect-ratio: 1/1;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 12px 24px var(--shadow);
-            box-sizing: border-box;
-        }
-
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px var(--shadow); }
-        .card:active { transform: scale(0.96); }
-
-        .card i { font-size: 1.8rem; color: var(--accent); opacity: 0.8; }
-        .card-title { font-weight: 700; font-size: 1.1rem; margin-top: 12px; color: var(--text-main); }
-        .card-desc { color: var(--text-dim); font-size: 0.85rem; margin-top: 6px; }
-
-        /* 特殊方塊：時鐘 */
-        .card-wide {
-            grid-column: span 2;
-            aspect-ratio: unset;
-            height: 130px;
-            align-items: flex-start;
-        }
-
-        .clock { 
-            font-size: 2.4rem; 
-            font-weight: 800; 
-            color: var(--text-main); 
-            margin-top: 8px;
-            letter-spacing: -1px;
-        }
-        
-        #date-display {
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
+        :root { --bg: #F9F9F7; --card: #FFFFFF; --accent: #A68E74; --text: #4A4A4A; --text-dim: #9B9B9B; --shadow: rgba(166, 142, 116, 0.12); }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 90%; max-width: 480px; padding: 50px 0; }
+        .profile { text-align: center; margin-bottom: 40px; }
+        .avatar { width: 80px; height: 80px; background: white; border-radius: 28px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border: 1px solid #F2EEE9; font-size: 2rem; color: var(--accent); box-shadow: 0 8px 20px var(--shadow); }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 100%; }
+        .card { background: var(--card); border-radius: 30px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1/1; text-decoration: none; color: inherit; transition: 0.3s; box-shadow: 0 10px 20px var(--shadow); box-sizing: border-box; }
+        .card:active { transform: scale(0.95); }
+        .card i { font-size: 1.8rem; color: var(--accent); }
+        .card-title { font-weight: 700; font-size: 1.1rem; margin-top: 10px; color: var(--text); }
+        .card-wide { grid-column: span 2; aspect-ratio: unset; height: 120px; }
+        .clock { font-size: 2.2rem; font-weight: 800; margin-top: 5px; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="profile">
         <div class="avatar"><i class="fas fa-feather-alt"></i></div>
-        <h1 style="margin: 10px 0 10px; font-size: 1.5rem; letter-spacing: 1px;">Hello, Today.</h1>
-        <div class="status-badge"><i class="fas fa-heart" style="font-size: 0.7rem;"></i> Simple Living</div>
+        <h1 style="font-size: 1.5rem;">Hello, Today.</h1>
     </div>
-
     <div class="grid">
         <div class="card card-wide">
-            <div id="date-display" style="color: var(--accent); font-size: 0.8rem;">LOADING...</div>
-            <div id="clock-display" class="clock">00:00:00</div>
+            <div id="date" style="color: var(--accent); font-size: 0.8rem; font-weight: 700;">LOADING...</div>
+            <div id="clock" class="clock">00:00:00</div>
         </div>
-
         <a href="assets/index.html" class="card">
             <i class="fas fa-wallet"></i>
-            <div>
-                <div class="card-title">資產帳本</div>
-                <div class="card-desc">My Balance</div>
-            </div>
+            <div><div class="card-title">資產帳本</div><div style="color:var(--text-dim); font-size:0.8rem;">Balance</div></div>
         </a>
-
-        <div class="card" onclick="alert('準備開啟生活隨筆...')">
-            <i class="fas fa-pen-nib"></i>
-            <div>
-                <div class="card-title">生活隨筆</div>
-                <div class="card-desc">Daily Notes</div>
-            </div>
-        </div>
-
-        <div class="card" onclick="alert('相簿模組建置中')">
-            <i class="fas fa-images"></i>
-            <div>
-                <div class="card-title">精選攝影</div>
-                <div class="card-desc">Memories</div>
-            </div>
-        </div>
-
-        <div class="card" onclick="window.location.href='https://github.com'">
-            <i class="fas fa-code-branch"></i>
-            <div>
-                <div class="card-title">開發空間</div>
-                <div class="card-desc">Source Code</div>
-            </div>
-        </div>
+        <div class="card" onclick="alert('Module building...')"><i class="fas fa-coffee"></i><div><div class="card-title">生活隨筆</div><div style="color:var(--text-dim); font-size:0.8rem;">Daily</div></div></div>
     </div>
 </div>
-
 <script>
-    function updateClock() {
+    function update() {
         const now = new Date();
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('date-display').innerText = now.toLocaleDateString('zh-TW', options);
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString('en-GB', { hour12: false });
+        document.getElementById('date').innerText = now.toLocaleDateString('zh-TW', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
     }
-    setInterval(updateClock, 1000);
-    updateClock();
+    setInterval(update, 1000); update();
 </script>
-
 </body>
 </html>
