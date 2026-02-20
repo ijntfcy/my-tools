@@ -10,8 +10,10 @@
         .container { width: 100%; max-width: 600px; }
         
         /* 計時器樣式 */
-        .timer-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: monospace; font-size: 14px; color: #666; background: #fff; padding: 8px 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .timer-val { color: var(--primary); font-weight: bold; }
+        .timer-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .timer-box { flex: 1; background: white; padding: 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .timer-label { font-size: 11px; color: #8E8E93; font-weight: bold; margin-bottom: 2px; }
+        .timer-value { font-family: 'Courier New', monospace; font-size: 18px; font-weight: bold; color: var(--primary); }
 
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
         .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
@@ -40,13 +42,14 @@
             font-weight: 600; transition: all 0.2s; color: #1C1C1E; width: 100%; box-sizing: border-box;
             display: flex; align-items: flex-start;
         }
-        .opt-num { margin-right: 10px; color: var(--primary); min-width: 25px; }
-        
+        /* 序號樣式 */
+        .opt-idx { color: var(--primary); margin-right: 12px; min-width: 24px; }
+
         .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; border-width: 3px; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
-        .opt-btn.correct .opt-num { color: white; }
+        .opt-btn.correct .opt-idx { color: white; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
-        .opt-btn.wrong .opt-num { color: white; }
+        .opt-btn.wrong .opt-idx { color: white; }
         
         .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: #AEAEB2; color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
         .action-btn.ready { background: var(--primary); box-shadow: 0 6px 16px rgba(0,122,255,0.3); }
@@ -60,10 +63,16 @@
 
 <div class="container">
     <div id="sheetMenu" class="menu-bar"></div>
-    
-    <div class="timer-row">
-        <div>總耗時: <span id="totalTime" class="timer-val">00:00</span></div>
-        <div>本題計時: <span id="questionTime" class="timer-val">0s</span></div>
+
+    <div class="timer-container">
+        <div class="timer-box">
+            <div class="timer-label">總計時</div>
+            <div id="totalTimer" class="timer-value">00:00</div>
+        </div>
+        <div class="timer-box">
+            <div class="timer-label">本題計時</div>
+            <div id="qTimer" class="timer-value">00:00</div>
+        </div>
     </div>
 
     <div class="top-row">
@@ -91,49 +100,48 @@
     let rawData = [], quizData = [], index = 0, selectedIds = [];
     let currentSheet = new URLSearchParams(window.location.search).get('sheet');
     
-    // 計時變數
-    let totalSeconds = 0, questionSeconds = 0;
-    let totalInterval, questionInterval;
+    // 計時器變數
+    let totalSec = 0, qSec = 0, totalTimerInterval, qTimerInterval;
 
     window.onload = async () => {
-        try {
-            const listResp = await fetch(`${API_URL}?type=listSheets`);
-            const sheetNames = await listResp.json();
-            const menu = document.getElementById('sheetMenu');
-            if (!currentSheet) currentSheet = sheetNames[0];
-            sheetNames.forEach(name => {
-                const btn = document.createElement('button');
-                btn.className = `menu-item ${name === currentSheet ? 'active' : ''}`;
-                btn.innerText = name;
-                btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
-                menu.appendChild(btn);
-            });
-            const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
-            rawData = await resp.json();
-            initQuiz();
-            startTotalTimer(); // 開始總計時
-        } catch (e) {
-            document.getElementById('info').innerText = "載入失敗，請檢查網路或 API 設定。";
-        }
+        const listResp = await fetch(`${API_URL}?type=listSheets`);
+        const sheetNames = await listResp.json();
+        const menu = document.getElementById('sheetMenu');
+        if (!currentSheet) currentSheet = sheetNames[0];
+        sheetNames.forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = `menu-item ${name === currentSheet ? 'active' : ''}`;
+            btn.innerText = name;
+            btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
+            menu.appendChild(btn);
+        });
+        const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
+        rawData = await resp.json();
+        initQuiz();
+        startTotalTimer();
     };
 
     function startTotalTimer() {
-        totalInterval = setInterval(() => {
-            totalSeconds++;
-            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-            const s = (totalSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('totalTime').innerText = `${m}:${s}`;
+        totalTimerInterval = setInterval(() => {
+            totalSec++;
+            document.getElementById('totalTimer').innerText = formatTime(totalSec);
         }, 1000);
     }
 
-    function resetQuestionTimer() {
-        clearInterval(questionInterval);
-        questionSeconds = 0;
-        document.getElementById('questionTime').innerText = `0s`;
-        questionInterval = setInterval(() => {
-            questionSeconds++;
-            document.getElementById('questionTime').innerText = `${questionSeconds}s`;
+    function resetQTimer() {
+        clearInterval(qTimerInterval);
+        qSec = 0;
+        document.getElementById('qTimer').innerText = "00:00";
+        qTimerInterval = setInterval(() => {
+            qSec++;
+            document.getElementById('qTimer').innerText = formatTime(qSec);
         }, 1000);
+    }
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
     }
 
     function initQuiz() {
@@ -143,15 +151,14 @@
 
     function render() {
         if (index >= quizData.length) { 
-            clearInterval(totalInterval);
-            clearInterval(questionInterval);
+            clearInterval(totalTimerInterval);
+            clearInterval(qTimerInterval);
             document.getElementById('qText').innerText = "測驗完成！"; document.getElementById('options').innerHTML = ""; 
             const mainBtn = document.getElementById('mainBtn'); mainBtn.innerText = "重新開始"; mainBtn.disabled = false; mainBtn.classList.add('ready');
             mainBtn.onclick = () => location.reload(); return; 
         }
 
-        resetQuestionTimer(); // 進入新題目，重置單題計時
-
+        resetQTimer();
         const q = quizData[index];
         selectedIds = [];
         
@@ -169,34 +176,29 @@
         const container = document.getElementById('options');
         container.innerHTML = "";
 
-        // 建立選項物件，如果是是非題則固定為 O, X
-        let optsData = (isTrueFalse ? ["O", "X"] : q.opts).map((text, i) => ({
+        let opts = (isTrueFalse ? ["O", "X"] : q.opts).map((text, i) => ({
             text: text,
-            originalId: isTrueFalse ? text.toUpperCase() : (i + 1).toString()
+            id: isTrueFalse ? text.toUpperCase() : (i + 1).toString()
         }));
 
-        if (document.getElementById('optRandom').checked && !isTrueFalse) {
-            optsData.sort(() => Math.random() - 0.5);
-        }
+        if (document.getElementById('optRandom').checked && !isTrueFalse) opts.sort(() => Math.random() - 0.5);
 
-        optsData.forEach((opt, i) => {
+        opts.forEach((opt, i) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            // 加入序號 1. 2. 3.
-            btn.innerHTML = `<span class="opt-num">${i + 1}.</span><span>${opt.text}</span>`;
-            
+            // 新增序號顯示 1. 2. 3.
+            btn.innerHTML = `<span class="opt-idx">${i + 1}.</span><span>${opt.text}</span>`;
             btn.onclick = () => {
                 if (typeText === "多選題") {
                     btn.classList.toggle('selected');
                     selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
-                    const mainBtn = document.getElementById('mainBtn');
-                    mainBtn.disabled = selectedIds.length === 0;
-                    mainBtn.classList.toggle('ready', selectedIds.length > 0);
+                    document.getElementById('mainBtn').disabled = selectedIds.length === 0;
+                    document.getElementById('mainBtn').classList.toggle('ready', selectedIds.length > 0);
                 } else {
-                    handleJudge(opt.originalId, cleanAns, btn);
+                    handleJudge(opt.id, cleanAns, btn);
                 }
             };
-            btn.dataset.id = opt.originalId;
+            btn.dataset.id = opt.id;
             container.appendChild(btn);
         });
 
@@ -207,7 +209,7 @@
     }
 
     function handleJudge(userId, correctAns, btn) {
-        clearInterval(questionInterval); // 答題後停止該題計時
+        clearInterval(qTimerInterval); // 答題即停止本題計時
         document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
         const isCorrect = userId === correctAns;
         btn.classList.add(isCorrect ? 'correct' : 'wrong');
@@ -221,11 +223,12 @@
     }
 
     async function handleAction() {
+        const q = quizData[index];
+        const cleanAns = q.ans.toString().replace(/，/g, ',').replace(/\s/g, '').toUpperCase();
         const mainBtn = document.getElementById('mainBtn');
+
         if (mainBtn.innerText === "確認送出答案") {
-            clearInterval(questionInterval); // 停止計時
-            const q = quizData[index];
-            const cleanAns = q.ans.toString().replace(/，/g, ',').replace(/\s/g, '').toUpperCase();
+            clearInterval(qTimerInterval);
             const correctArr = cleanAns.split(",").sort();
             const userArr = selectedIds.sort();
             const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
