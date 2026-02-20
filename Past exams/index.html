@@ -2,31 +2,44 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>測驗系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jexams 雲端測驗系統</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #007AFF; --bg: #F2F2F7; }
-        body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        :root { --primary: #007AFF; --bg: #F2F2F7; --card-shadow: 0 8px 24px rgba(149, 157, 165, 0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 600px; }
+        
+        /* 分頁選單 */
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 12px; }
-        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; }
-        .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: #3A3A3C; }
+        .menu-item.active { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); color: var(--primary); }
+
+        /* 控制開關靠左 */
+        .control-panel { display: flex; justify-content: flex-start; gap: 20px; margin-bottom: 15px; padding: 0 5px; }
+        .toggle-group { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #48484A; }
+
+        .header-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #8E8E93; font-weight: 600; }
+
+        /* 題目卡片 */
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: var(--card-shadow); margin-bottom: 15px; }
+        .subject-tag { background: #E8F0FE; color: var(--primary); font-size: 12px; padding: 4px 10px; border-radius: 6px; }
+        .q-text { font-size: 1.3rem; font-weight: 700; color: #1C1C1E; line-height: 1.5; margin: 15px 0; }
         
-        /* 修正：隨機按鈕靠左對齊並排 */
-        .control-panel { display: flex; justify-content: flex-start; gap: 20px; margin-bottom: 15px; font-size: 14px; font-weight: bold; }
-        
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .q-text { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; }
+        /* 選項 */
         .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        .opt-btn { background: white; border: 1.5px solid #E5E5EA; border-radius: 12px; padding: 16px; text-align: left; cursor: pointer; font-size: 1rem; }
-        .opt-btn.selected { border-color: var(--primary); background: #E8F0FE; }
-        .opt-btn.correct { background: #34C759 !important; color: white; }
-        .opt-btn.wrong { background: #FF3B30 !important; color: white; }
+        .opt-btn { background: white; border: 1.5px solid #E5E5EA; border-radius: 12px; padding: 16px; text-align: left; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .opt-btn.selected { border-color: var(--primary); background: #E8F0FE; font-weight: bold; }
+        .opt-btn.correct { background: #34C759 !important; color: white !important; border-color: #34C759; }
+        .opt-btn.wrong { background: #FF3B30 !important; color: white !important; border-color: #FF3B30; }
+        
+        .footer { margin-top: 20px; }
         .action-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; background: #D1D1D6; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
         .action-btn.ready { background: var(--primary); }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="menu-bar">
         <button class="menu-item" id="m-Jexams" onclick="changeSheet('Jexams')">Jexams</button>
@@ -35,71 +48,109 @@
     </div>
 
     <div class="control-panel">
-        <label><input type="checkbox" id="qRandom" onchange="initQuiz()"> 題目隨機</label>
-        <label><input type="checkbox" id="optRandom" onchange="render()"> 選項隨機</label>
+        <label class="toggle-group"><input type="checkbox" id="qRandom" onchange="initQuiz()"> 題目隨機</label>
+        <label class="toggle-group"><input type="checkbox" id="optRandom" onchange="render()"> 選項隨機</label>
     </div>
 
-    <div class="card">
-        <div id="qText" class="q-text">讀取中...</div>
-        <div id="options" class="options-grid"></div>
+    <div class="header-info">
+        <div id="progress">第 1 / -- 題</div>
+        <div id="score">得分: 0</div>
     </div>
-    <div class="footer"><button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>下一題</button></div>
+
+    <div class="card animate__animated animate__fadeIn">
+        <span id="subject" class="subject-tag">載入中</span>
+        <div id="qText" class="q-text">讀取資料中，請稍候...</div>
+    </div>
+
+    <div id="options" class="options-grid"></div>
+
+    <div class="footer">
+        <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>下一題</button>
+    </div>
 </div>
 
 <script>
-    const API_URL = "您的新GAS部署網址"; 
-    let rawData = [], quizData = [], index = 0, selectedIds = [];
+    // ⚠️ 請填入您剛才測試成功的 GAS 網址
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    let rawData = [], quizData = [], index = 0, scoreCount = 0, selectedIds = [];
+
     const currentSheet = new URLSearchParams(window.location.search).get('sheet') || 'Jexams';
     document.getElementById(`m-${currentSheet}`).classList.add('active');
 
     window.onload = async () => {
         try {
             const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
-            rawData = await resp.json();
-            if (rawData.error) throw new Error(rawData.error);
+            const data = await resp.json();
+            // 處理測試格式或正常格式
+            rawData = Array.isArray(data) ? data : data["資料測試"] || [];
+            // 如果是測試格式，去掉標題列
+            if (rawData.length > 0 && rawData[0].subject === "科目") rawData.shift();
+            
+            // 轉換資料格式以防萬一
+            if (rawData.length > 0 && Array.isArray(rawData[0])) {
+                rawData = rawData.map(r => ({ subject: r[0], ans: String(r[1]), q: r[2], opts: r.slice(3).filter(o => o !== "") }));
+            }
+            
             initQuiz();
-        } catch (e) { document.getElementById('qText').innerText = "連線失敗：" + e.message; }
+        } catch (e) { document.getElementById('qText').innerText = "連線失敗，請檢查 GAS 網址與權限。"; }
     };
 
     function changeSheet(name) { window.location.search = `?sheet=${name}`; }
+
     function initQuiz() {
         quizData = document.getElementById('qRandom').checked ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
-        index = 0; render();
+        index = 0; scoreCount = 0;
+        document.getElementById('score').innerText = "得分: 0";
+        render();
     }
 
     function render() {
-        if (index >= quizData.length) { document.getElementById('qText').innerText = "測驗結束！"; return; }
+        if (index >= quizData.length) { 
+            document.getElementById('qText').innerText = `測驗結束！您的得分是：${scoreCount}`;
+            document.getElementById('options').innerHTML = "";
+            return; 
+        }
         const q = quizData[index];
-        document.getElementById('qText').innerText = q.q;
-        const container = document.getElementById('options');
-        container.innerHTML = "";
         selectedIds = [];
+        document.getElementById('progress').innerText = `第 ${index + 1} / ${quizData.length} 題`;
+        document.getElementById('subject').innerText = q.subject || "未分類";
+        document.getElementById('qText').innerText = q.q;
         
-        // 自動生成選項：是非題補上 O/X
+        const isMulti = String(q.ans).includes(",");
+        const mainBtn = document.getElementById('mainBtn');
+        mainBtn.innerText = isMulti ? "確認送出答案" : "下一題";
+        mainBtn.disabled = true;
+        mainBtn.classList.remove('ready');
+
+        // 生成選項
         let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
-        let opts = optsData.map((t, i) => ({ text: t, id: (q.ans === "O" || q.ans === "X") ? t : (i + 1).toString() }));
-        
+        let opts = optsData.map((t, i) => {
+            let id = (q.ans === "O" || q.ans === "X") ? t.toUpperCase() : (i + 1).toString();
+            return { text: t, id: id };
+        });
+
         if (document.getElementById('optRandom').checked) opts.sort(() => Math.random() - 0.5);
 
+        const container = document.getElementById('options');
+        container.innerHTML = "";
         opts.forEach(opt => {
             const btn = document.createElement('button');
-            btn.className = 'opt-btn';
+            btn.className = 'opt-btn animate__animated fadeIn';
             btn.innerText = opt.text;
-            btn.onclick = () => handleSelect(btn, opt.id, q.ans);
+            btn.onclick = () => handleSelect(btn, opt.id, String(q.ans).toUpperCase());
             container.appendChild(btn);
         });
-        document.getElementById('mainBtn').innerText = q.ans.includes(",") ? "確認送出" : "下一題";
-        document.getElementById('mainBtn').disabled = true;
     }
 
     function handleSelect(btn, id, ans) {
-        if (!ans.includes(",")) { // 單選判定
+        if (!ans.includes(",")) {
             document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
-            if (id === ans) btn.classList.add('correct');
-            else btn.classList.add('wrong');
+            if (id === ans) { btn.classList.add('correct'); scoreCount += 5; } 
+            else { btn.classList.add('wrong'); }
+            document.getElementById('score').innerText = "得分: " + scoreCount;
             document.getElementById('mainBtn').disabled = false;
             document.getElementById('mainBtn').classList.add('ready');
-        } else { // 複選判定
+        } else {
             btn.classList.toggle('selected');
             if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id);
             else selectedIds.push(id);
@@ -109,12 +160,23 @@
     }
 
     function handleAction() {
-        if (document.getElementById('mainBtn').innerText === "確認送出") {
+        if (document.getElementById('mainBtn').innerText === "確認送出答案") {
             const q = quizData[index];
-            const isCorrect = selectedIds.sort().join(",") === q.ans.split(",").sort().join(",");
-            alert(isCorrect ? "正確！" : "錯誤，答案是：" + q.ans);
+            const correctArr = String(q.ans).toUpperCase().split(",").sort();
+            const userArr = selectedIds.sort();
+            const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+            
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                b.onclick = null;
+                if (correctArr.includes(b.innerText) || correctArr.includes(selectedIds.find(id => id === b.innerText))) b.classList.add('correct');
+            });
+
+            if (isCorrect) { scoreCount += 10; }
+            document.getElementById('score').innerText = "得分: " + scoreCount;
             document.getElementById('mainBtn').innerText = "下一題";
-        } else { index++; render(); }
+        } else {
+            index++; render();
+        }
     }
 </script>
 </body>
