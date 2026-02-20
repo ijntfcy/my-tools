@@ -1,150 +1,51 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vault Pro</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --bg: #F9F9F7; --card: #FFFFFF; --accent: #8E735B; --text-main: #3C3C3C; --text-sub: #A0A0A0; --line: #F1EFEA; --grad: linear-gradient(135deg, #EADBC8 0%, #C19A6B 100%); }
-        body { background: var(--bg); margin: 0; padding: 0; color: var(--text-main); font-family: "PingFang TC", sans-serif; }
-        .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--line); }
-        .header-title { font-weight: 800; font-size: 0.85rem; color: var(--accent); letter-spacing: 2px; }
-        .btn-circle { background: white; border: 1px solid var(--line); width: 38px; height: 38px; border-radius: 50%; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .container { padding: 0 20px 50px; max-width: 480px; margin: 0 auto; }
-        .summary-card { background: var(--grad); border-radius: 35px; padding: 35px 25px; margin: 20px 0; color: white; box-shadow: 0 15px 35px rgba(142, 115, 91, 0.25); text-align: center; }
-        .summary-label { font-size: 0.75rem; font-weight: 700; opacity: 0.85; margin-bottom: 10px; }
-        .summary-total { font-size: 2.5rem; font-weight: 900; }
-        .action-bar { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px; }
-        .btn-action { flex: 1; padding: 14px 5px; border-radius: 20px; border: 1px solid var(--line); background: white; color: var(--accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .btn-action.active { background: #6D543E; color: white; }
-        .card { background: var(--card); border-radius: 30px; padding: 25px; margin-bottom: 20px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
-        .type-badge { position: absolute; top: 22px; right: 25px; font-size: 0.7rem; color: var(--text-sub); border: 1px solid var(--line); padding: 2px 8px; border-radius: 8px; }
-        .bank-name { font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
-        .val-money { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
-        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 80%; max-width: 300px; }
-        input { width: 100%; padding: 15px; margin: 20px 0; border: 1px solid var(--line); border-radius: 15px; text-align: center; font-size: 1.5rem; outline: none; }
-        .btn-go { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: 700; }
-    </style>
-</head>
-<body>
-
-<div id="loginOverlay" class="overlay">
-    <div class="modal">
-        <h2 style="margin:0; color: var(--accent);">安全驗證</h2>
-        <input type="password" id="passCode" placeholder="••••" inputmode="numeric">
-        <button class="btn-go" onclick="unlock()">確認解鎖</button>
-    </div>
-</div>
-
-<div id="app" style="display:none;">
-    <div class="header">
-        <button class="btn-circle" onclick="location.href='../index.html'"><i class="fas fa-home"></i></button>
-        <div id="userWelcome" class="header-title">HELLO</div>
-        <div style="width:38px;"></div>
-    </div>
-    <div class="container">
-        <div class="summary-card">
-            <div class="summary-label">TOTAL ASSETS</div>
-            <div id="totalDisplay" class="summary-total">$ 0</div>
-        </div>
-        <div class="action-bar">
-            <button class="btn-action" id="btnFilter" onclick="cycleFilter()"><i class="fas fa-university"></i><span id="filterLabel">帳戶</span></button>
-            <button class="btn-action" onclick="fetchData()"><i class="fas fa-sync-alt"></i>同步</button>
-            <button class="btn-action" onclick="logout()"><i class="fas fa-sign-out-alt"></i>登出</button>
-        </div>
-        <div id="mainList"></div>
-    </div>
-</div>
-
-<script>
-    const API_URL = "您的部署網址";
-    let pageKey = "", userIp = "獲取中...";
-    let allData = [], allHeaders = [], dynamicTypes = ["全部"], currentTypeIdx = 0;
-
-    // 獲取 IP
-    fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => userIp = d.ip).catch(() => userIp = "失敗");
-
-    function unlock() {
-        const p = document.getElementById('passCode').value;
-        if(p) { pageKey = p; start(); }
+try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // 2. 寫入登入紀錄 (登入時間 | IP | 姓名 | 權限等級)
+    var logSheet = ss.getSheetByName("使用者登入紀錄");
+    if (logSheet) {
+      logSheet.appendRow([new Date(), userIp, currentUser.name, currentUser.level]); 
     }
 
-    function logout() { pageKey = ""; location.reload(); }
-
-    function start() {
-        document.getElementById('loginOverlay').style.display='none';
-        document.getElementById('app').style.display='block';
-        fetchData();
+    // 3. 讀取資料
+    var sheet = ss.getSheetByName(currentUser.targetSheet); 
+    
+    // 💡 這裡增加錯誤判斷：如果找不到分頁，回傳具體錯誤文字
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "error", 
+        "message": "權限配置錯誤：找不到名為 [" + currentUser.targetSheet + "] 的工作表"
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 💡 數值處理：若為非數值或負數，回傳 0
-    function cleanAmount(val) {
-        let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
-        return (isNaN(n) || n <= 0) ? 0 : n;
+    var fullData = sheet.getDataRange().getValues();
+    if (fullData.length < 1) {
+       throw new Error("工作表內容為空");
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr || dateStr === '-') return '-';
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-    }
+    var headers = fullData[0];
+    var rows = fullData.slice(1);
+    
+    var jsonData = rows.map(function(row) {
+      var obj = {};
+      headers.forEach(function(header, i) { 
+        obj[header.toString().trim()] = row[i]; 
+      });
+      return obj;
+    });
 
-    async function fetchData() {
-        const list = document.getElementById('mainList');
-        list.innerHTML = '<div style="text-align:center; padding:50px; color:#A0A0A0;">同步中...</div>';
-        try {
-            const res = await fetch(`${API_URL}?pwd=${pageKey}&ip=${userIp}`);
-            const json = await res.json();
-            if(json.status === "success") {
-                allData = json.data;
-                allHeaders = json.headers;
-                document.getElementById('userWelcome').innerText = `HELLO, ${json.userName}`;
-                dynamicTypes = ["全部", ...new Set(allData.map(d => d['帳戶類別']))].filter(Boolean);
-                render();
-            } else { alert(json.message); logout(); }
-        } catch(e) { list.innerHTML = "連線失敗"; }
-    }
-
-    function cycleFilter() {
-        currentTypeIdx = (currentTypeIdx + 1) % dynamicTypes.length;
-        document.getElementById('filterLabel').innerText = (currentTypeIdx === 0) ? "帳戶" : dynamicTypes[currentTypeIdx];
-        document.getElementById('btnFilter').classList.toggle('active', currentTypeIdx !== 0);
-        render();
-    }
-
-    function render() {
-        const type = dynamicTypes[currentTypeIdx];
-        const filtered = (type === "全部") ? allData : allData.filter(d => d['帳戶類別'] === type);
-        
-        // 加總
-        let total = filtered.reduce((sum, item) => {
-            const key = Object.keys(item).find(k => k.includes('金額'));
-            return sum + cleanAmount(item[key]);
-        }, 0);
-        document.getElementById('totalDisplay').innerText = `$ ${total.toLocaleString()}`;
-
-        document.getElementById('mainList').innerHTML = filtered.map(item => {
-            let rows = allHeaders.map(h => {
-                if(['帳戶名稱','帳戶類別'].includes(h)) return '';
-                let val = item[h] || '-', css = "";
-                if(h.includes('金額')) { 
-                    val = `$ ${cleanAmount(val).toLocaleString()}`; 
-                    css = "val-money"; 
-                }
-                if(h.includes('日期')) val = formatDate(val);
-                if(h.includes('利率')) {
-                    let r = parseFloat(val);
-                    val = isNaN(r) ? val : (r * 100).toFixed(2) + '%';
-                }
-                return `<div class="row"><span style="color:#A0A0A0; font-size:0.8rem">${h}</span><span class="${css}">${val}</span></div>`;
-            }).join('');
-            return `<div class="card"><span class="type-badge">${item['帳戶類別']}</span><span class="bank-name">${item['帳戶名稱']}</span>${rows}</div>`;
-        }).join('');
-    }
-</script>
-</body>
-</html>
+    return ContentService.createTextOutput(JSON.stringify({
+      "status": "success", 
+      "userName": currentUser.name,
+      "userLevel": currentUser.level,
+      "headers": headers, 
+      "data": jsonData
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (err) {
+    // 💡 這裡會把具體的錯誤訊息傳回給網頁，讓你知道為什麼「連線失敗」
+    return ContentService.createTextOutput(JSON.stringify({
+      "status": "error", 
+      "message": "系統錯誤: " + err.message
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
