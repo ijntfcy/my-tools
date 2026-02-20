@@ -10,38 +10,40 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; color: var(--text); }
         .container { width: 100%; max-width: 600px; }
         
-        /* 選單樣式：自動分頁按鈕 */
+        /* 選單樣式：自動從 Excel 分頁名稱生成 */
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 4px; }
         .menu-item { flex: 1; min-width: 80px; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         
-        /* 控制與計時列 */
-        .control-panel { display: flex; justify-content: flex-start; gap: 15px; margin-bottom: 12px; padding: 0 5px; }
+        /* 控制選項靠左 */
+        .control-panel { display: flex; justify-content: flex-start; gap: 15px; margin-bottom: 12px; padding: 0 5px; width: 100%; box-sizing: border-box; }
         .switch-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #48484A; cursor: pointer; }
+        
+        /* 計時器列 */
         .timer-row { display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%; padding: 0 5px; box-sizing: border-box; }
         .timer-pill { background: #E5E5EA; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #3A3A3C; }
 
-        /* 題目卡片 */
-        .card { background: white; border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 15px; position: relative; }
+        /* 題目卡片設計 */
+        .card { background: white; border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 15px; position: relative; width: 100%; box-sizing: border-box; }
         .badge-row { display: flex; gap: 8px; margin-bottom: 15px; }
         .badge { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; }
         .badge-subject { background: #E8F0FE; color: var(--primary); }
         .badge-type { background: #F2F2F7; color: #8E8E93; }
-        .q-text { font-size: 1.3rem; font-weight: 700; line-height: 1.4; }
+        .q-text { font-size: 1.3rem; font-weight: 700; line-height: 1.4; margin-bottom: 5px; }
 
-        /* 答案回饋：單題秒數會出現在這 */
+        /* 答案回饋：單題耗時放在錯誤提示前 */
         .ans-feedback { margin-top: 15px; padding: 15px; border-radius: 12px; font-weight: 700; display: none; font-size: 14px; }
         .fb-correct { background: #E8F5E9; color: var(--success); border: 1px solid #C8E6C9; }
         .fb-wrong { background: #FFEBEE; color: var(--danger); border: 1px solid #FFCDD2; }
 
-        /* 選項按鈕 */
+        /* 選項按鈕樣式 */
         .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%; }
-        .opt-btn { background: white; border: 2px solid #F2F2F7; border-radius: 16px; padding: 18px; text-align: left; cursor: pointer; font-size: 1rem; transition: 0.2s; font-weight: 500; }
+        .opt-btn { background: white; border: 2px solid #F2F2F7; border-radius: 16px; padding: 18px; text-align: left; cursor: pointer; font-size: 1rem; transition: 0.2s; font-weight: 500; width: 100%; box-sizing: border-box; }
         .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success); }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger); }
         
-        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: #D1D1D6; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 15px; }
+        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: #D1D1D6; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.3s; }
         .action-btn.ready { background: var(--primary); box-shadow: 0 6px 16px rgba(0,122,255,0.3); }
     </style>
 </head>
@@ -74,7 +76,7 @@
 </div>
 
 <script>
-    // 請確認此 GAS 網址為「最新部署」的版本
+    // 您的 GAS API 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
     let rawData = [], quizData = [], index = 0, selectedIds = [];
     let totalSeconds = 0, qSeconds = 0, totalInterval, qInterval;
@@ -83,7 +85,7 @@
 
     window.onload = async () => {
         try {
-            // 1. 自動獲取 Excel 分頁清單
+            // 1. 自動從試算表抓取所有分頁名稱
             const listResp = await fetch(`${API_URL}?type=listSheets`);
             const sheetNames = await listResp.json();
             
@@ -98,13 +100,13 @@
                 menuContainer.appendChild(btn);
             });
 
-            // 2. 獲取題目資料
+            // 2. 獲取當前分頁的題目
             const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
             rawData = await resp.json();
             
             startTotalTimer();
             initQuiz();
-        } catch (e) { document.getElementById('qText').innerText = "連線失敗，請確認 GAS 權限或分頁。"; }
+        } catch (e) { document.getElementById('qText').innerText = "連線失敗，請檢查 GAS 部署權限。"; }
     };
 
     function startTotalTimer() {
@@ -166,7 +168,7 @@
         opts.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn animate__animated fadeIn';
-            // 自動序號：是非題除外
+            // 加上 1. 2. 3. 序號 (是非題除外)
             const prefix = (typeText !== "是非題") ? `${idx + 1}. ` : "";
             btn.innerText = prefix + opt.text;
             btn.dataset.id = opt.id;
@@ -182,7 +184,7 @@
 
     function handleSelect(btn, id, ans) {
         const feedback = document.getElementById('ansFeedback');
-        if (!ans.includes(",")) { // 單選
+        if (!ans.includes(",")) { // 單選或是非
             clearInterval(qInterval);
             document.querySelectorAll('.opt-btn').forEach(b => {
                 b.onclick = null;
@@ -196,7 +198,7 @@
             } else {
                 btn.classList.add('wrong');
                 feedback.className = "ans-feedback fb-wrong";
-                // 計時秒數加入錯誤提示前
+                // 修正：單題耗時放在錯誤提示前
                 feedback.innerText = `(${qSeconds}s) ❌ 答錯了。答案是：${ans}`;
             }
             document.getElementById('mainBtn').disabled = false;
@@ -232,6 +234,7 @@
                 feedback.innerText = `✨ 複選正確！(耗時 ${qSeconds}s)`;
             } else {
                 feedback.className = "ans-feedback fb-wrong";
+                // 修正：單題耗時放在多選題錯誤提示前
                 feedback.innerText = `(${qSeconds}s) ❌ 答錯了。答案：${q.ans}`;
             }
             mainBtn.innerText = "下一題";
