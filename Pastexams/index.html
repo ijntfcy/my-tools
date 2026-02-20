@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams 雲端測驗 Pro</title>
+    <title>Jexams 雲端測驗系統</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
+        /* 導覽列與按鈕樣式 */
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
         .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -22,15 +23,17 @@
         .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
         .action-btn.ready { background: var(--primary); box-shadow: 0 6px 16px rgba(0,122,255,0.3); }
         .feedback-box { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; }
+        .red-btn { background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; }
     </style>
 </head>
 <body>
 <div class="container">
+    <button class="red-btn" onclick="clearErrors()">清除錯題記錄</button>
     <div id="sheetMenu" class="menu-bar"></div>
     <div id="info" style="font-size: 12px; color: #8E8E93; margin-bottom: 8px;"></div>
     <div class="card">
         <div><span id="subject" class="badge">讀取中</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
-        <div id="qText" class="q-text">請輸入密碼以讀取題目...</div>
+        <div id="qText" class="q-text">請輸入密碼載入試卷...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
     <div id="options" class="options-grid"></div>
@@ -42,7 +45,7 @@
     let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
     let userKey = sessionStorage.getItem('quiz_auth');
 
-    // Fisher-Yates 洗牌
+    // Fisher-Yates 洗牌演算法
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -51,20 +54,30 @@
         return array;
     }
 
+    // 封裝 API 請求 (整合密碼驗證)
     async function safeFetch(params) {
         if (!userKey) {
-            userKey = prompt("請輸入密碼 123456：");
+            userKey = prompt("此測驗受密碼保護，請輸入 123456：");
             if (!userKey) return null;
             sessionStorage.setItem('quiz_auth', userKey);
         }
         try {
             const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&${params}`);
             const data = await resp.json();
-            if (data.error) { alert(data.error); sessionStorage.removeItem('quiz_auth'); location.reload(); return null; }
+            if (data.error) { 
+                alert(data.error); 
+                sessionStorage.removeItem('quiz_auth'); 
+                location.reload(); 
+                return null; 
+            }
             return data;
-        } catch (e) { alert("連線失敗，請檢查權限設定。"); return null; }
+        } catch (e) { 
+            alert("連線失敗，請檢查 GAS 是否部署為『所有人』存取。"); 
+            return null; 
+        }
     }
 
+    // 初始化加載
     window.onload = async () => {
         const sheets = await safeFetch('type=listSheets');
         if (!sheets) return;
@@ -85,7 +98,7 @@
 
     function render() {
         if (index >= quizData.length) {
-            document.getElementById('qText').innerText = "🎉 測驗完成！";
+            document.getElementById('qText').innerText = "🎉 本試卷已測驗完成！";
             document.getElementById('options').innerHTML = "";
             return;
         }
@@ -109,7 +122,7 @@
         opts.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = `${idx + 1}. ${opt.text}`; // 自動序號
+            btn.innerText = `${idx + 1}. ${opt.text}`;
             btn.dataset.id = opt.id;
             btn.onclick = () => {
                 if (isMulti) {
@@ -165,6 +178,13 @@
 
     async function recordError(q) {
         fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
+    }
+
+    async function clearErrors() {
+        if(confirm("確定要刪除所有錯題記錄嗎？")) {
+            await safeFetch('type=clearErrors');
+            alert("記錄已清除");
+        }
     }
 </script>
 </body>
