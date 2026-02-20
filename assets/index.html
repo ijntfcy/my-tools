@@ -1,1 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vault System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #000000; --card: #1c1c1e; --primary: #0A84FF; --danger: #FF453A; --success: #32D74B; --text: #FFFFFF; --secondary-text: #8E8E93; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-user-select: none; user-select: none; }
+        .header { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(20px); padding: 15px; border-bottom: 0.5px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 100; display: none; }
+        .toolbar { display: flex; gap: 12px; max-width: 500px; margin: 0 auto; }
+        .btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; font-size: 0.9rem; }
+        .btn-sync { background: var(--success); }
+        .btn-logout { background: rgba(255, 255, 255, 0.1); }
+        .container { padding: 16px; max-width: 500px; margin: 0 auto; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .card-tag { font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 6px; color: var(--secondary-text); }
+        .row { display: flex; justify-content: space-between; padding: 10px 0; }
+        .label { color: var(--secondary-text); font-size: 0.85rem; }
+        .value { font-weight: 500; }
+        .val-amount { font-family: 'SF Mono', monospace; color: #32D74B; }
+        .high-rate { color: #FFD60A; font-weight: 700; }
+        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal { text-align: center; width: 85%; max-width: 320px; }
+        input { width: 100%; padding: 16px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; border-radius: 16px; font-size: 1.5rem; text-align: center; outline: none; }
+        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: bold; }
+        .loading { text-align: center; color: var(--secondary-text); margin-top: 100px; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+<div id="loginOverlay" class="overlay">
+    <div class="modal">
+        <i class="fas fa-key" style="font-size:3rem; color:var(--primary); margin-bottom:20px;"></i>
+        <h2 style="margin:0">System Authorization</h2>
+        <input type="password" id="accPwd" placeholder="••••" inputmode="numeric">
+        <button class="btn-login" onclick="login()">Authorize</button>
+    </div>
+</div>
+<div id="header" class="header">
+    <div class="toolbar">
+        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> Sync</button>
+        <button class="btn btn-logout" onclick="logout()">Logout</button>
+    </div>
+</div>
+<div id="dataList" class="container"></div>
+<script>
+    const CONFIG = {
+        API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec"
+    };
 
+    let CURRENT_PWD = sessionStorage.getItem('active_session_pwd') || "";
+
+    window.onload = () => {
+        if(CURRENT_PWD) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('header').style.display = 'block';
+            fetchData();
+        }
+    };
+
+    function login() {
+        const pwd = document.getElementById('accPwd').value;
+        if(pwd) {
+            CURRENT_PWD = pwd;
+            sessionStorage.setItem('active_session_pwd', pwd);
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('header').style.display = 'block';
+            fetchData();
+        }
+    }
+
+    function logout() {
+        sessionStorage.clear();
+        window.location.href = '../index.html'; // 跳回首頁
+    }
+
+    async function fetchData() {
+        const list = document.getElementById('dataList');
+        list.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Initializing...</div>';
+        try {
+            const res = await fetch(`${CONFIG.API_URL}?pwd=${encodeURIComponent(CURRENT_PWD)}`);
+            const json = await res.json();
+            if(json.status === "success") {
+                render(json.headers, json.data);
+            } else {
+                alert("Authorization Denied");
+                logout();
+            }
+        } catch(e) {
+            list.innerHTML = '<div class="loading">❌ Connection Error</div>';
+        }
+    }
+
+    function render(headers, data) {
+        document.getElementById('dataList').innerHTML = data.map(item => {
+            let rows = headers.map(h => {
+                let val = item[h];
+                let valClass = "value";
+                if (h.includes('金額')) {
+                    valClass += " val-amount";
+                    let num = String(val).replace(/[^0-9.-]/g, '');
+                    val = isNaN(num) ? val : "NT$ " + Number(num).toLocaleString();
+                }
+                if (h.includes('利率')) {
+                    let rate = parseFloat(val);
+                    if (rate >= 0.015) valClass += " high-rate";
+                    val = (rate * 100).toFixed(2) + '%';
+                }
+                if (h.includes('日期')) {
+                    const d = new Date(val);
+                    if (!isNaN(d)) val = new Date(d.getTime() + 8*3600*1000).toISOString().split('T')[0];
+                }
+                return `<div class="row"><span class="label">${h}</span><span class="${valClass}">${val || '-'}</span></div>`;
+            }).join('');
+            return `<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-shield-alt"></i> ${item['帳戶名稱'] || 'Account'}</div><div class="card-tag">${item['帳戶類別'] || 'Standard'}</div></div>${rows}</div>`;
+        }).join('');
+    }
+</script>
+</body>
+</html>
