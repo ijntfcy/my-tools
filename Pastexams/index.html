@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams Pro 測驗系統</title>
+    <title>Jexams Pro - 計時挑戰版</title>
     <style>
-        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
+        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; --warning: #FF9500; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; }
+        
+        /* 計時器 UI */
+        .timer-box { width: 100%; margin-bottom: 10px; }
+        .timer-text { font-size: 14px; font-weight: bold; color: var(--primary); text-align: right; margin-bottom: 5px; }
+        .timer-container { width: 100%; height: 8px; background: #E5E5EA; border-radius: 4px; overflow: hidden; }
+        #timerBar { height: 100%; width: 100%; background: var(--success); transition: width 1s linear, background 0.3s; }
+
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
         .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
         .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
         .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; color: #1C1C1E; }
         .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -27,10 +34,16 @@
 <body>
 <div class="container">
     <div id="sheetMenu" class="menu-bar"></div>
+    
+    <div class="timer-box">
+        <div class="timer-text">⏳ 倒數：<span id="timeLeft">30</span> 秒</div>
+        <div class="timer-container"><div id="timerBar"></div></div>
+    </div>
+
     <div id="info" style="font-size: 12px; color: #8E8E93; margin-bottom: 8px;"></div>
     <div class="card">
         <div><span id="subject" class="badge">科目</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
-        <div id="qText" class="q-text">載入中，請輸入密碼...</div>
+        <div id="qText" class="q-text">讀取中...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
     <div id="options" class="options-grid"></div>
@@ -38,17 +51,11 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    const API_URL = "您的GAS網址"; // 記得更新此處
+    const TIMER_SECONDS = 30; // 每題秒數
     let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
+    let timerInterval, currentTime = TIMER_SECONDS;
     let userKey = sessionStorage.getItem('quiz_auth');
-
-    function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
 
     async function safeFetch(params) {
         if (!userKey) {
@@ -59,11 +66,56 @@
         try {
             const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&${params}`);
             const data = await resp.json();
-            if (data.error) { alert(data.error); sessionStorage.removeItem('quiz_auth'); location.reload(); return null; }
             return data;
-        } catch (e) { alert("API連線失敗，請檢查GAS部署權限。"); return null; }
+        } catch (e) { alert("連線失敗"); return null; }
     }
 
+    // --- 計時器邏輯 ---
+    function startTimer() {
+        clearInterval(timerInterval);
+        currentTime = TIMER_SECONDS;
+        updateTimerUI();
+        timerInterval = setInterval(() => {
+            currentTime--;
+            updateTimerUI();
+            if (currentTime <= 0) {
+                clearInterval(timerInterval);
+                timeOutHandler();
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI() {
+        const bar = document.getElementById('timerBar');
+        const text = document.getElementById('timeLeft');
+        const percent = (currentTime / TIMER_SECONDS) * 100;
+        bar.style.width = percent + "%";
+        text.innerText = currentTime;
+        
+        if (percent < 30) bar.style.background = "var(--danger)";
+        else if (percent < 60) bar.style.background = "var(--warning)";
+        else bar.style.background = "var(--success)";
+    }
+
+    function timeOutHandler() {
+        if (isProcessing) return;
+        isProcessing = true;
+        const fb = document.getElementById('ansFeedback');
+        fb.style.display = "block";
+        fb.style.background = "#FFF3E0";
+        fb.innerText = "⏰ 時間到！自動標記正確答案。";
+        
+        const q = quizData[index];
+        const correctAns = q.ans.toString().toUpperCase();
+        document.querySelectorAll('.opt-btn').forEach(b => {
+            if(correctAns.includes(b.dataset.id)) b.classList.add('correct');
+        });
+
+        recordError(q, " (逾時)");
+        updateBtn(true, "下一題");
+    }
+
+    // --- 測驗核心邏輯 ---
     window.onload = async () => {
         const sheets = await safeFetch('type=listSheets');
         if (!sheets) return;
@@ -80,46 +132,56 @@
         if (rawData) initQuiz();
     };
 
-    function initQuiz() { quizData = shuffle([...rawData]); index = 0; render(); }
+    function initQuiz() { 
+        quizData = rawData.sort(() => Math.random() - 0.5); 
+        index = 0; render(); 
+    }
 
     function render() {
         if (index >= quizData.length) {
+            clearInterval(timerInterval);
             document.getElementById('qText').innerText = "🎉 測驗完成！";
             document.getElementById('options').innerHTML = "";
+            document.querySelector('.timer-box').style.display = "none";
             return;
         }
         const q = quizData[index];
         const cleanAns = q.ans.toString().replace(/，/g, ',').toUpperCase().trim();
         const isMulti = cleanAns.includes(",");
-        const isTF = (cleanAns === "O" || cleanAns === "X");
         
         selectedIds = []; isProcessing = false;
-        document.getElementById('info').innerText = `題號：${index + 1} / ${quizData.length}`;
+        document.getElementById('info').innerText = `題目進度：${index + 1} / ${quizData.length}`;
         document.getElementById('subject').innerText = q.subject;
-        document.getElementById('qTypeBadge').innerText = isTF ? "是非題" : (isMulti ? "多選題" : "單選題");
+        document.getElementById('qTypeBadge').innerText = isMulti ? "多選題" : "單選/是非";
         document.getElementById('qText').innerText = q.q;
         document.getElementById('ansFeedback').style.display = "none";
         
         const container = document.getElementById('options');
         container.innerHTML = "";
-        let opts = (isTF ? ["O", "X"] : q.opts).map((t, i) => ({ text: t, id: isTF ? t.toUpperCase() : (i + 1).toString() }));
-        shuffle(opts);
+        
+        // 洗牌選項並保留原始 ID
+        let opts = q.opts.map((t, i) => ({ text: t, id: (i + 1).toString() })).sort(() => Math.random() - 0.5);
 
         opts.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = `${idx + 1}. ${opt.text}`;
+            btn.innerText = `${idx + 1}. ${opt.text}`; // 自動加序號
             btn.dataset.id = opt.id;
             btn.onclick = () => {
+                if (isProcessing) return;
                 if (isMulti) {
                     btn.classList.toggle('selected');
                     selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
                     updateBtn(selectedIds.length > 0, "確認送出答案");
-                } else { judgeSingle(btn, opt.id, cleanAns); }
+                } else { 
+                    clearInterval(timerInterval);
+                    judgeSingle(btn, opt.id, cleanAns); 
+                }
             };
             container.appendChild(btn);
         });
         updateBtn(false, isMulti ? "確認送出答案" : "請選擇答案");
+        startTimer();
     }
 
     function updateBtn(ready, text) {
@@ -128,7 +190,7 @@
     }
 
     function judgeSingle(btn, id, ans) {
-        if (isProcessing) return; isProcessing = true;
+        isProcessing = true;
         const correct = (id === ans);
         btn.classList.add(correct ? 'correct' : 'wrong');
         if (!correct) {
@@ -141,9 +203,10 @@
     async function handleAction() {
         const btn = document.getElementById('mainBtn');
         if (btn.innerText === "確認送出答案") {
+            clearInterval(timerInterval);
             isProcessing = true;
             const q = quizData[index];
-            const ansArr = q.ans.toString().replace(/，/g, ',').toUpperCase().split(",").sort();
+            const ansArr = q.ans.toString().toUpperCase().split(",").sort();
             const userArr = selectedIds.sort();
             const correct = JSON.stringify(ansArr) === JSON.stringify(userArr);
             document.querySelectorAll('.opt-btn').forEach(b => {
@@ -162,8 +225,8 @@
         fb.innerText = correct ? "✨ 正確！" : `❌ 錯誤。答案為：${ans}`;
     }
 
-    async function recordError(q) {
-        fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
+    async function recordError(q, suffix = "") {
+        fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify({...q, q: q.q + suffix}))}`);
     }
 </script>
 </body>
