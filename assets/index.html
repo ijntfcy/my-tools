@@ -17,12 +17,8 @@
         .summary-total { font-size: 2.5rem; font-weight: 900; letter-spacing: -1px; }
         .action-bar { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px; }
         .btn-action { flex: 1; padding: 14px 5px; border-radius: 20px; border: 1px solid var(--line); background: white; color: var(--accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: 0.3s; }
-        
-        /* 💡 修正 3：帳戶按鈕點選時顏色變更 */
-        .btn-action.active { background: #6D543E; color: #FFFFFF; border-color: #6D543E; box-shadow: 0 5px 15px rgba(109, 84, 62, 0.3); }
+        .btn-action.active { background: #6D543E; color: #FFFFFF; border-color: #6D543E; }
         .btn-action i { font-size: 1.1rem; opacity: 0.7; }
-        .btn-action.active i { opacity: 1; }
-
         .card { background: var(--card); border-radius: 30px; padding: 25px; margin-bottom: 20px; border: 1px solid white; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
         .type-badge { position: absolute; top: 22px; right: 25px; font-size: 0.7rem; color: var(--text-sub); font-weight: 700; border: 1px solid var(--line); padding: 2px 8px; border-radius: 8px; }
         .bank-name { font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; color: #333; }
@@ -52,7 +48,7 @@
     </div>
     <div class="container">
         <div class="summary-card">
-            <div id="levelLabel" class="summary-label">TOTAL ASSETS</div>
+            <div class="summary-label">TOTAL ASSETS</div>
             <div id="totalDisplay" class="summary-total">$ 0</div>
         </div>
         <div class="action-bar">
@@ -82,30 +78,35 @@
         fetchData();
     }
 
-    // 💡 修正 1：加總邏輯（處理字串、逗號與過濾）
+    // 💡 修正 2：加總邏輯（精確匹配包含「金額」字眼的欄位）
     function updateTotal(data) {
-        const total = data.reduce((sum, item) => {
-            // 從 item 中找到包含「金額」字眼的標題
+        let total = 0;
+        data.forEach(item => {
+            // 尋找 key 包含 "金額" 的欄位 (例如 "金額 (TWD)" 或 "當前餘額")
             const amountKey = Object.keys(item).find(key => key.includes('金額'));
-            let rawVal = item[amountKey] || 0;
-            // 剔除 $、逗號、空白
-            let cleanVal = String(rawVal).replace(/[^0-9.-]/g, '');
-            return sum + (parseFloat(cleanVal) || 0);
-        }, 0);
+            if (amountKey) {
+                let rawVal = String(item[amountKey] || "0");
+                let cleanVal = parseFloat(rawVal.replace(/[^0-9.-]/g, '')) || 0;
+                total += cleanVal;
+            }
+        });
         document.getElementById('totalDisplay').innerText = `$ ${total.toLocaleString()}`;
     }
 
-    // 💡 修正 2：日期顯示格式化 (YYYY/MM/DD)
+    // 💡 修正 3：日期格式化 (YYYY/MM/DD)
     function formatDate(dateStr) {
         if (!dateStr || dateStr === '-') return '-';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}/${m}/${day}`;
     }
 
     async function fetchData() {
         const list = document.getElementById('mainList');
-        list.innerHTML = '<div style="text-align:center; padding:50px; color:#A0A0A0;">讀取中...</div>';
+        list.innerHTML = '<div style="text-align:center; padding:50px; color:#A0A0A0;">同步中...</div>';
         try {
             const res = await fetch(`${API_URL}?pwd=${pageKey}`);
             const json = await res.json();
@@ -113,12 +114,11 @@
                 allData = json.data;
                 allHeaders = json.headers;
                 document.getElementById('userWelcome').innerText = `HELLO, ${json.userName}`;
-                document.getElementById('levelLabel').innerText = `ASSETS (${json.userLevel})`;
                 
                 const types = [...new Set(allData.map(d => d['帳戶類別']))].filter(Boolean);
                 dynamicTypes = ["全部", ...types];
                 
-                render(); // render 會自動調用加總
+                render();
             } else { alert(json.message); logout(); }
         } catch(e) { list.innerHTML = "連線失敗"; }
     }
@@ -127,8 +127,6 @@
         currentTypeIdx = (currentTypeIdx + 1) % dynamicTypes.length;
         const typeName = dynamicTypes[currentTypeIdx];
         document.getElementById('filterLabel').innerText = (typeName === "全部") ? "帳戶" : typeName;
-        
-        // 💡 修正 3：切換時變更顏色
         document.getElementById('btnFilter').classList.toggle('active', typeName !== "全部");
         render();
     }
@@ -137,7 +135,7 @@
         const type = dynamicTypes[currentTypeIdx];
         const filtered = (type === "全部") ? allData : allData.filter(d => d['帳戶類別'] === type);
         
-        // 💡 修正 1：切換時同步更新總金額
+        // 執行加總
         updateTotal(filtered);
 
         document.getElementById('mainList').innerHTML = filtered.map(item => {
@@ -149,9 +147,10 @@
                     val = `$ ${Number(String(val).replace(/[^0-9.-]/g,'')).toLocaleString()}`; 
                     css = "val-money"; 
                 }
-                if(h.includes('利率')) { val = (parseFloat(val)*100).toFixed(2)+'%'; }
-                
-                // 💡 修正 2：格式化日期
+                if(h.includes('利率')) { 
+                    let rate = parseFloat(val);
+                    val = isNaN(rate) ? val : (rate * 100).toFixed(2) + '%'; 
+                }
                 if(h.includes('日期')) { val = formatDate(val); }
 
                 return `<div class="row"><span style="color:#A0A0A0; font-size:0.8rem">${h}</span><span class="${css}">${val}</span></div>`;
