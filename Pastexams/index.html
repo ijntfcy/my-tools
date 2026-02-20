@@ -10,9 +10,9 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; color: var(--text); }
         .container { width: 100%; max-width: 600px; }
         
-        /* 選單樣式：自動從 Excel 分頁名稱生成 */
+        /* 選單樣式：自動從 Excel 分頁生成 */
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 4px; }
-        .menu-item { flex: 1; min-width: 80px; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .menu-item { flex: 1; min-width: 80px; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         
         /* 控制選項靠左 */
@@ -29,7 +29,7 @@
         .badge { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; }
         .badge-subject { background: #E8F0FE; color: var(--primary); }
         .badge-type { background: #F2F2F7; color: #8E8E93; }
-        .q-text { font-size: 1.3rem; font-weight: 700; line-height: 1.4; margin-bottom: 5px; }
+        .q-text { font-size: 1.3rem; font-weight: 700; line-height: 1.4; }
 
         /* 答案回饋：單題耗時放在錯誤提示前 */
         .ans-feedback { margin-top: 15px; padding: 15px; border-radius: 12px; font-weight: 700; display: none; font-size: 14px; }
@@ -59,6 +59,7 @@
 
     <div class="timer-row">
         <div class="timer-pill">單題計時: <span id="qTimer">0s</span></div>
+        <div id="qProgress" class="timer-pill">第 1 題</div>
         <div class="timer-pill">總計時: <span id="totalTimer">00:00</span></div>
     </div>
 
@@ -67,12 +68,12 @@
             <span id="subject" class="badge badge-subject">科目</span>
             <span id="qType" class="badge badge-type">類型</span>
         </div>
-        <div id="qText" class="q-text">讀取中...</div>
+        <div id="qText" class="q-text">讀取題目中...</div>
         <div id="ansFeedback" class="ans-feedback"></div>
     </div>
 
     <div id="options" class="options-grid"></div>
-    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>下一題</button>
+    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>請先選擇答案</button>
 </div>
 
 <script>
@@ -106,7 +107,9 @@
             
             startTotalTimer();
             initQuiz();
-        } catch (e) { document.getElementById('qText').innerText = "連線失敗，請檢查 GAS 部署權限。"; }
+        } catch (e) { 
+            document.getElementById('qText').innerText = "連線失敗，請檢查 GAS 部署權限或資料夾名稱是否正確。"; 
+        }
     };
 
     function startTotalTimer() {
@@ -136,8 +139,12 @@
     function render() {
         if (index >= quizData.length) { 
             clearInterval(totalInterval); clearInterval(qInterval);
-            document.getElementById('qText').innerText = "測驗完成！"; 
-            document.getElementById('options').innerHTML = ""; return; 
+            document.getElementById('qText').innerText = "測驗完成！恭喜你完成所有題目。"; 
+            document.getElementById('options').innerHTML = ""; 
+            document.getElementById('mainBtn').innerText = "重新開始";
+            document.getElementById('mainBtn').disabled = false;
+            document.getElementById('mainBtn').onclick = () => location.reload();
+            return; 
         }
         
         startQuestionTimer();
@@ -149,6 +156,7 @@
         if (ansStr === "O" || ansStr === "X") typeText = "是非題";
         else if (ansStr.includes(",")) typeText = "多選題";
         
+        document.getElementById('qProgress').innerText = `第 ${index + 1} / ${quizData.length} 題`;
         document.getElementById('subject').innerText = q.subject;
         document.getElementById('qType').innerText = typeText;
         document.getElementById('qText').innerText = q.q;
@@ -157,6 +165,7 @@
         const container = document.getElementById('options');
         container.innerHTML = "";
 
+        // 設定選項資料
         let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
         let opts = optsData.map((t, i) => ({ 
             text: t, 
@@ -198,7 +207,7 @@
             } else {
                 btn.classList.add('wrong');
                 feedback.className = "ans-feedback fb-wrong";
-                // 修正：單題耗時放在錯誤提示前
+                // 將單題耗時放在錯誤提示前
                 feedback.innerText = `(${qSeconds}s) ❌ 答錯了。答案是：${ans}`;
             }
             document.getElementById('mainBtn').disabled = false;
@@ -234,7 +243,6 @@
                 feedback.innerText = `✨ 複選正確！(耗時 ${qSeconds}s)`;
             } else {
                 feedback.className = "ans-feedback fb-wrong";
-                // 修正：單題耗時放在多選題錯誤提示前
                 feedback.innerText = `(${qSeconds}s) ❌ 答錯了。答案：${q.ans}`;
             }
             mainBtn.innerText = "下一題";
