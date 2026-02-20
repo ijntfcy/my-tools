@@ -10,70 +10,90 @@
         .container { width: 100%; max-width: 500px; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 密碼卡片美化 */
+        /* 密碼欄位美化 */
         .card { background: white; padding: 30px; border-radius: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); text-align: center; }
         .pwd-input { 
             width: 90%; padding: 15px; border: 2px solid #E5E5EA; border-radius: 16px; font-size: 24px; 
-            text-align: center; letter-spacing: 5px; outline: none; transition: 0.3s;
+            text-align: center; letter-spacing: 5px; outline: none; transition: 0.3s; background: #F9F9FB;
         }
-        .pwd-input:focus { border-color: var(--primary); box-shadow: 0 0 12px rgba(0,122,255,0.2); }
+        .pwd-input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 12px rgba(0,122,255,0.2); }
         
+        /* 選項按鈕與序號 */
         .opt-btn { 
             background: white; border: 2px solid #F2F2F7; border-radius: 18px; padding: 18px; margin-bottom: 12px;
             text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; display: flex; width: 100%;
         }
+        .opt-num { color: var(--primary); margin-right: 12px; font-weight: 800; min-width: 30px; }
         .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; }
 
         .main-btn { 
             width: 100%; padding: 20px; border-radius: 20px; border: none; background: var(--primary); 
-            color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 10px;
+            color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s;
         }
-        .main-btn:disabled { background: var(--disabled); }
+        .main-btn:disabled { background: var(--disabled); cursor: not-allowed; }
+        .main-btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
 <div id="loginPage" class="container" style="margin-top: 50px;">
     <div class="card">
-        <h1 style="margin-bottom:20px;">Jexams Pro</h1>
-        <input type="password" id="userPwd" class="pwd-input" placeholder="••••••">
+        <h1 style="margin:0 0 10px 0;">Jexams Pro</h1>
+        <p style="color:#8E8E93; margin-bottom:20px;">請輸入 6 位數密碼</p>
+        <input type="password" id="userPwd" class="pwd-input" placeholder="••••••" maxlength="6">
         <div style="margin: 20px 0;">
             <label><input type="checkbox" id="randQ" checked> 題目隨機</label>
         </div>
-        <button class="main-btn" onclick="checkLogin()">驗證並進入</button>
+        <button id="loginBtn" class="main-btn" onclick="checkLogin()">驗證並進入</button>
     </div>
 </div>
 
 <div id="quizPage" class="container" style="display:none;">
-    <div id="sheetMenu" style="display:flex; gap:8px; overflow-x:auto; margin-bottom:15px;"></div>
+    <div id="sheetMenu" style="display:flex; gap:8px; overflow-x:auto; margin-bottom:15px; padding:5px 0;"></div>
     <div class="card" style="text-align:left; margin-bottom:20px;">
-        <div style="display:flex; justify-content:space-between; font-size:14px; color:#888;">
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:bold; color:var(--primary);">
             <span id="subject">載入中...</span>
-            <span id="progress">0 / 0</span>
+            <span id="progress" style="color:#AEAEB2"></span>
         </div>
-        <h2 id="qText" style="margin: 15px 0;">載入題目中...</h2>
-        <div id="feedback" style="display:none; padding:15px; border-radius:12px; text-align:center; font-weight:bold;"></div>
+        <div id="qText" style="margin:15px 0; font-size:1.3rem; font-weight:700; line-height:1.5;">載入題目中...</div>
+        <div id="feedback" style="display:none; padding:15px; border-radius:15px; text-align:center; font-weight:bold;"></div>
     </div>
     <div id="options"></div>
     <button id="nextBtn" class="main-btn" onclick="handleNext()" disabled>請先選擇答案</button>
 </div>
 
 <script>
-    // ⚠️ 請在此處貼上您剛才在 GAS 複製的「網頁應用程式 URL」
     const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-    
     let quizData = [], index = 0, selected = [], isMulti = false, isAnswered = false, savedPwd = "";
 
     async function checkLogin() {
-        savedPwd = document.getElementById('userPwd').value;
+        const input = document.getElementById('userPwd');
+        const btn = document.getElementById('loginBtn');
+        savedPwd = input.value;
+        
+        if(!savedPwd) return alert("請輸入密碼");
+        
+        btn.innerText = "驗證中...";
+        btn.disabled = true;
+
         try {
             const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(savedPwd)}&type=listSheets`);
             const sheets = await resp.json();
-            if (sheets.error) { alert("密碼錯誤！"); return; }
-            initApp(sheets);
-        } catch (e) { alert("API 連線失敗，請檢查 GAS 是否正確部署"); }
+            
+            if (sheets.error) {
+                alert("密碼錯誤，請重新輸入");
+                btn.innerText = "驗證並進入";
+                btn.disabled = false;
+            } else {
+                initApp(sheets);
+            }
+        } catch (e) {
+            alert("連線失敗！請確認 GAS 已經點擊『部署』並設定為『任何人』。");
+            btn.innerText = "驗證並進入";
+            btn.disabled = false;
+        }
     }
 
     function initApp(sheets) {
@@ -85,7 +105,7 @@
         sheets.forEach(s => {
             const b = document.createElement('button');
             b.innerText = s;
-            b.style = `padding:8px 16px; border:none; border-radius:10px; cursor:pointer; white-space:nowrap; ${s === curSheet ? 'background:var(--primary);color:white' : 'background:white'}`;
+            b.style = `padding:10px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:bold; white-space:nowrap; transition:0.3s; ${s === curSheet ? 'background:var(--primary);color:white' : 'background:white;color:#8E8E93'}`;
             b.onclick = () => location.search = `?sheet=${encodeURIComponent(s)}`;
             menu.appendChild(b);
         });
@@ -102,7 +122,7 @@
 
     function render() {
         if (index >= quizData.length) {
-            document.getElementById('qText').innerText = "🎉 測驗完成！";
+            document.getElementById('qText').innerText = "🎉 恭喜完成所有題目！";
             document.getElementById('options').innerHTML = "";
             document.getElementById('nextBtn').style.display = "none";
             return;
@@ -121,16 +141,16 @@
         q.opts.forEach((text, i) => {
             const b = document.createElement('button');
             b.className = 'opt-btn';
-            b.innerHTML = `<span style="color:var(--primary); margin-right:12px;">(${i+1})</span> ${text}`;
+            b.innerHTML = `<span class="opt-num">(${i+1})</span> <span>${text}</span>`;
             b.onclick = () => {
                 if(isAnswered) return;
+                const val = (i+1).toString();
                 if(isMulti) {
                     b.classList.toggle('selected');
-                    const val = (i+1).toString();
                     selected.includes(val) ? selected = selected.filter(x=>x!==val) : selected.push(val);
                     setBtn("送出答案", selected.length > 0);
                 } else {
-                    selected = [(i+1).toString()];
+                    selected = [val];
                     check();
                 }
             };
@@ -156,7 +176,7 @@
         f.style.display = 'block';
         f.style.background = isRight ? '#E8F5E9' : '#FFEBEE';
         f.style.color = isRight ? 'var(--success)' : 'var(--danger)';
-        f.innerText = isRight ? "回答正確！" : `錯誤！正確答案是：${q.ans}`;
+        f.innerText = isRight ? "✨ 回答正確！" : `❌ 答錯了！答案是：${q.ans}`;
         setBtn("下一題", true);
     }
 
