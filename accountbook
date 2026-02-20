@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="pageTitle">我的帳務工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #f2f2f7; --card: #ffffff; --primary: #007aff; --text: #1c1c1e; --success: #34c759; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); margin: 0; padding: 0; color: var(--text); }
+        .main-header { background: #fff; padding: 20px 10px; border-bottom: 1px solid #d1d1d6; position: sticky; top: 0; z-index: 1000; }
+        .toolbar { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; }
+        .btn { flex: 1; height: 46px; border-radius: 12px; border: none; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; cursor: pointer; }
+        .btn-sync { background: var(--success); }
+        .container { padding: 12px; max-width: 500px; margin: 0 auto; }
+        
+        /* 🎨 卡片美化與 test 帳戶區分 */
+        .card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
+        .card.test-account { border-left-color: #ff9500; background: #fffaf0; } /* test 帳戶變橘邊 */
+        
+        .card-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 12px; color: var(--primary); }
+        .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9f9f9; }
+        .label { color: #8e8e93; }
+        .value { font-weight: 600; }
+        .high-rate { color: #ff3b30; font-weight: 800; } /* 高利率變紅 */
+
+        /* 鎖定層 */
+        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal { background: white; padding: 30px; border-radius: 24px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 15px; margin: 20px 0; border: 1px solid #e5e5ea; border-radius: 12px; font-size: 1.5rem; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="loginOverlay" class="overlay">
+    <div class="modal">
+        <h2>🔓 帳戶解鎖</h2>
+        <input type="password" id="accPwd" placeholder="請輸入代碼">
+        <button class="btn btn-sync" style="width:100%" onclick="saveAndLogin()">進入系統</button>
+    </div>
+</div>
+
+<div class="main-header">
+    <div class="toolbar">
+        <button class="btn btn-sync" onclick="fetchData()">🔄 同步更新</button>
+    </div>
+</div>
+
+<div class="container" id="dataList"></div>
+
+<script>
+    const CONFIG = {
+        // ⚠️ 這是你之前的 GAS 網址
+        API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec", 
+        PWD_LIST: ["8888", "abcd1234", "9999"] // 密碼與 GAS 內設定一致
+    };
+
+    let CURRENT_PWD = localStorage.getItem('family_acc_pwd') || "";
+
+    window.onload = () => { if(CURRENT_PWD) { document.getElementById('loginOverlay').style.display = 'none'; fetchData(); } };
+
+    function saveAndLogin() {
+        const pwd = document.getElementById('accPwd').value;
+        if(CONFIG.PWD_LIST.includes(pwd)) {
+            CURRENT_PWD = pwd;
+            localStorage.setItem('family_acc_pwd', pwd);
+            document.getElementById('loginOverlay').style.display = 'none';
+            fetchData();
+        } else { alert("代碼錯誤"); }
+    }
+
+    async function fetchData() {
+        const list = document.getElementById('dataList');
+        list.innerHTML = '<div style="text-align:center; padding: 40px;">🔄 正在同步試算表資料...</div>';
+        try {
+            const res = await fetch(`${CONFIG.API_URL}?pwd=${CURRENT_PWD}`);
+            const json = await res.json();
+            if(json.status === "success") render(json.headers, json.data);
+        } catch(e) { list.innerHTML = "❌ 連線失敗，請檢查 GAS 網址與權限設定"; }
+    }
+
+    function render(headers, data) {
+        document.getElementById('dataList').innerHTML = data.map(item => {
+            // 判斷是否為 test 帳戶
+            const isTest = item['帳戶類別'] === 'test帳戶';
+            let rows = headers.map(h => {
+                let val = item[h];
+                // 美化規則：利率 >= 1.5% (0.015) 顯示紅色
+                let valClass = (h.includes('利率') && parseFloat(val) >= 0.015) ? 'high-rate' : 'value';
+                
+                // 格式化金額
+                if(h.includes('金額')) val = Number(val).toLocaleString();
+                // 格式化百分比
+                if(h.includes('利率')) val = (parseFloat(val) * 100).toFixed(2) + '%';
+
+                return `<div class="row"><span class="label">${h}</span><span class="${valClass}">${val || '-'}</span></div>`;
+            }).join('');
+            return `<div class="card ${isTest ? 'test-account' : ''}"><div class="card-title">${item['帳戶名稱']}</div>${rows}</div>`;
+        }).join('');
+    }
+</script>
+</body>
+</html>
