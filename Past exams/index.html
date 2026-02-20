@@ -1,12 +1,44 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jexams 雲端同步系統</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>
-        /* ... 之前的 CSS ... */
+        :root { --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --bg: #F2F2F7; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; }
+        
+        /* 自動生成的選單樣式 */
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 4px; }
-        .menu-item { flex: 1; min-width: 80px; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .menu-item { flex: 1; min-width: 80px; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; color: #3A3A3C; }
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        /* ... 之前的 CSS ... */
+
+        .control-panel { display: flex; gap: 15px; margin-bottom: 12px; font-size: 14px; font-weight: bold; }
+        .timer-row { display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%; }
+        .timer-pill { background: #E5E5EA; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 15px; position: relative; }
+        .badge-row { display: flex; gap: 6px; margin-bottom: 10px; }
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 5px; font-weight: bold; }
+        .badge-subject { background: #E8F0FE; color: var(--primary); }
+        .badge-type { background: #F2F2F7; color: #8E8E93; }
+        
+        .q-text { font-size: 1.25rem; font-weight: 700; line-height: 1.4; color: #1C1C1E; }
+
+        .ans-feedback { margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: bold; display: none; font-size: 14px; }
+        .fb-correct { background: #E8F5E9; color: var(--success); border: 1px solid #C8E6C9; }
+        .fb-wrong { background: #FFEBEE; color: var(--danger); border: 1px solid #FFCDD2; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+        .opt-btn { background: white; border: 1.5px solid #F2F2F7; border-radius: 15px; padding: 16px; text-align: left; cursor: pointer; font-size: 1rem; transition: 0.2s; font-weight: 500; }
+        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
+        .opt-btn.correct { background: var(--success) !important; color: white !important; }
+        .opt-btn.wrong { background: var(--danger) !important; color: white !important; }
+        
+        .action-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; background: #D1D1D6; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 15px; }
+        .action-btn.ready { background: var(--primary); }
     </style>
 </head>
 <body>
@@ -15,49 +47,190 @@
     <div id="sheetMenu" class="menu-bar"></div>
 
     <div class="control-panel">
-        <label class="switch-label"><input type="checkbox" id="qRandom" onchange="initQuiz()"> 題目隨機</label>
-        <label class="switch-label"><input type="checkbox" id="optRandom" onchange="render()"> 選項隨機</label>
-    </div>
+        <label><input type="checkbox" id="qRandom" onchange="initQuiz()"> 題目隨機</label>
+        <label><input type="checkbox" id="optRandom" onchange="render()"> 選項隨機</label>
     </div>
 
+    <div class="timer-row">
+        <div class="timer-pill">單題: <span id="qTimer">0s</span></div>
+        <div class="timer-pill">總計: <span id="totalTimer">00:00</span></div>
+    </div>
+
+    <div class="card">
+        <div class="badge-row">
+            <span id="subject" class="badge badge-subject">---</span>
+            <span id="qType" class="badge badge-type">---</span>
+        </div>
+        <div id="qText" class="q-text">載入中...</div>
+        <div id="ansFeedback" class="ans-feedback"></div>
+    </div>
+
+    <div id="options" class="options-grid"></div>
+    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>下一題</button>
+</div>
+
 <script>
-    const API_URL = "你的GAS部署網址"; 
+    const API_URL = "你的GAS網址"; 
     let rawData = [], quizData = [], index = 0, selectedIds = [];
     let totalSeconds = 0, qSeconds = 0, totalInterval, qInterval;
 
-    // 取得網址上的 sheet 參數，如果沒有則預設為空
     let currentSheet = new URLSearchParams(window.location.search).get('sheet');
 
     window.onload = async () => {
         try {
-            // 1. 先獲取所有分頁名稱
+            // 1. 自動抓取 Excel 分頁清單
             const listResp = await fetch(`${API_URL}?type=listSheets`);
             const sheetNames = await listResp.json();
             
-            // 2. 動態產生選單按鈕
             const menuContainer = document.getElementById('sheetMenu');
-            if (!currentSheet) currentSheet = sheetNames[0]; // 若網址沒指定，預設抓第一個
+            if (!currentSheet) currentSheet = sheetNames[0];
 
             sheetNames.forEach(name => {
                 const btn = document.createElement('button');
                 btn.className = `menu-item ${name === currentSheet ? 'active' : ''}`;
                 btn.innerText = name;
-                btn.onclick = () => changeSheet(name);
+                btn.onclick = () => window.location.search = `?sheet=${encodeURIComponent(name)}`;
                 menuContainer.appendChild(btn);
             });
 
-            // 3. 抓取對應分頁的題目資料
+            // 2. 抓取題目
             const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
             rawData = await resp.json();
             
             startTotalTimer();
             initQuiz();
-        } catch (e) { document.getElementById('qText').innerText = "連線失敗或分頁不存在。"; }
+        } catch (e) { document.getElementById('qText').innerText = "連線失敗。"; }
     };
 
-    function changeSheet(name) { window.location.search = `?sheet=${encodeURIComponent(name)}`; }
+    function startTotalTimer() {
+        totalInterval = setInterval(() => {
+            totalSeconds++;
+            let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            let s = (totalSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('totalTimer').innerText = `${m}:${s}`;
+        }, 1000);
+    }
 
-    // ... 剩下的 initQuiz, render, handleSelect, handleAction 邏輯全部維持上一版本的優化版 ...
+    function startQuestionTimer() {
+        qSeconds = 0;
+        document.getElementById('qTimer').innerText = "0s";
+        clearInterval(qInterval);
+        qInterval = setInterval(() => {
+            qSeconds++;
+            document.getElementById('qTimer').innerText = `${qSeconds}s`;
+        }, 1000);
+    }
+
+    function initQuiz() {
+        quizData = document.getElementById('qRandom').checked ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
+        index = 0; render();
+    }
+
+    function render() {
+        if (index >= quizData.length) { 
+            clearInterval(totalInterval); clearInterval(qInterval);
+            document.getElementById('qText').innerText = "測驗完成！"; 
+            document.getElementById('options').innerHTML = ""; return; 
+        }
+        
+        startQuestionTimer();
+        const q = quizData[index];
+        const ansStr = q.ans.toUpperCase();
+        selectedIds = [];
+        
+        let typeText = "選擇題";
+        if (ansStr === "O" || ansStr === "X") typeText = "是非題";
+        else if (ansStr.includes(",")) typeText = "多選題";
+        
+        document.getElementById('subject').innerText = q.subject;
+        document.getElementById('qType').innerText = typeText;
+        document.getElementById('qText').innerText = q.q;
+        document.getElementById('ansFeedback').style.display = "none";
+
+        const container = document.getElementById('options');
+        container.innerHTML = "";
+
+        let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
+        let opts = optsData.map((t, i) => ({ 
+            text: t, 
+            id: (ansStr === "O" || ansStr === "X") ? t.toUpperCase() : (i + 1).toString() 
+        }));
+
+        if (document.getElementById('optRandom').checked) opts.sort(() => Math.random() - 0.5);
+
+        opts.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn animate__animated fadeIn';
+            // 修正點：加上 1. 2. 3. 序號 (是非題除外)
+            const prefix = (typeText !== "是非題") ? `${idx + 1}. ` : "";
+            btn.innerText = prefix + opt.text;
+            btn.dataset.id = opt.id;
+            btn.onclick = () => handleSelect(btn, opt.id, ansStr);
+            container.appendChild(btn);
+        });
+
+        const mainBtn = document.getElementById('mainBtn');
+        mainBtn.innerText = typeText === "多選題" ? "確認送出" : "下一題";
+        mainBtn.disabled = true;
+        mainBtn.classList.remove('ready');
+    }
+
+    function handleSelect(btn, id, ans) {
+        const feedback = document.getElementById('ansFeedback');
+        if (!ans.includes(",")) {
+            clearInterval(qInterval);
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                b.onclick = null;
+                if (b.dataset.id === ans) b.classList.add('correct');
+            });
+            feedback.style.display = "block";
+            if (id === ans) {
+                feedback.className = "ans-feedback fb-correct";
+                feedback.innerText = `✨ 正確！(耗時 ${qSeconds}s)`;
+            } else {
+                btn.classList.add('wrong');
+                feedback.className = "ans-feedback fb-wrong";
+                // 修正點：秒數加入錯誤提示前
+                feedback.innerText = `(${qSeconds}s) ❌ 答錯了。答案是：${ans}`;
+            }
+            document.getElementById('mainBtn').disabled = false;
+            document.getElementById('mainBtn').classList.add('ready');
+        } else {
+            btn.classList.toggle('selected');
+            selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
+            document.getElementById('mainBtn').disabled = selectedIds.length === 0;
+            document.getElementById('mainBtn').classList.toggle('ready', selectedIds.length > 0);
+        }
+    }
+
+    function handleAction() {
+        const mainBtn = document.getElementById('mainBtn');
+        const q = quizData[index];
+        const feedback = document.getElementById('ansFeedback');
+
+        if (mainBtn.innerText === "確認送出") {
+            clearInterval(qInterval);
+            const correctArr = q.ans.toUpperCase().split(",").sort();
+            const userArr = selectedIds.sort();
+            const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+            
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                b.onclick = null;
+                if (correctArr.includes(b.dataset.id)) b.classList.add('correct');
+                if (b.classList.contains('selected') && !correctArr.includes(b.dataset.id)) b.classList.add('wrong');
+            });
+
+            feedback.style.display = "block";
+            if (isCorrect) {
+                feedback.className = "ans-feedback fb-correct";
+                feedback.innerText = `✨ 正確！(耗時 ${qSeconds}s)`;
+            } else {
+                feedback.className = "ans-feedback fb-wrong";
+                feedback.innerText = `(${qSeconds}s) ❌ 答錯了。答案：${q.ans}`;
+            }
+            mainBtn.innerText = "下一題";
+        } else { index++; render(); }
+    }
 </script>
 </body>
 </html>
