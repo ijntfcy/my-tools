@@ -10,7 +10,7 @@
         .container { width: 100%; max-width: 600px; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 登入介面 */
+        /* 密碼登入美化 */
         .card-box { background: white; padding: 40px 30px; border-radius: 28px; box-shadow: var(--shadow); width: 100%; box-sizing: border-box; text-align: center; }
         .pwd-field { 
             width: 100%; padding: 18px; border: 2px solid #E5E5EA; border-radius: 16px; font-size: 24px; 
@@ -19,21 +19,20 @@
         }
         .pwd-field:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 5px rgba(0,122,255,0.15); }
         
-        /* 計時器 */
+        /* 選項與計時器 */
         .timer-grid { width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px; gap: 12px; }
         .timer-card { flex: 1; background: white; padding: 12px; border-radius: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .timer-val { font-size: 18px; font-weight: 800; color: var(--primary); }
 
-        /* 選項按鈕 */
         .opt-btn { 
             background: white; border: 2px solid #F2F2F7; border-radius: 18px; padding: 18px; 
             text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; transition: all 0.2s;
             display: flex; align-items: center; margin-bottom: 12px; width: 100%;
         }
-        .opt-idx { color: var(--primary); margin-right: 15px; font-weight: 800; min-width: 30px; }
+        .opt-idx { color: var(--primary); margin-right: 15px; font-weight: 800; min-width: 30px; text-align: center; }
         .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
-        .opt-btn.correct { background: var(--success) !important; color: white !important; }
-        .opt-btn.wrong { background: var(--danger) !important; color: white !important; }
+        .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
+        .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
         
         .action-btn { width: 100%; padding: 20px; border-radius: 22px; border: none; background: var(--disabled); color: white; font-size: 1.2rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
         .action-btn.ready { background: var(--primary); box-shadow: 0 8px 25px rgba(0,122,255,0.3); }
@@ -44,25 +43,26 @@
 
 <div id="setupPage" class="container">
     <div class="card-box">
-        <h1 style="margin:0">Jexams Pro</h1>
+        <h1 style="margin:0; font-size: 28px;">Jexams Pro</h1>
+        <p style="color: #8E8E93; margin-top: 10px;">請輸入密碼進入測驗</p>
         <input type="password" id="pwdInput" class="pwd-field" placeholder="••••••">
-        <div style="margin-bottom:20px">
+        <div style="margin-bottom:20px; color: #444; font-weight: bold;">
             <label><input type="checkbox" id="randQ" checked> 題目隨機</label>
-            <label style="margin-left:15px"><input type="checkbox" id="randO" checked> 選項隨機</label>
+            <label style="margin-left:20px"><input type="checkbox" id="randO" checked> 選項隨機</label>
         </div>
         <button class="action-btn ready" onclick="checkAuth()">驗證並進入</button>
     </div>
 </div>
 
 <div id="mainApp" class="container" style="display:none;">
-    <div id="sheetMenu" style="display:flex; gap:8px; overflow-x:auto; margin-bottom:15px;"></div>
+    <div id="sheetMenu" style="display:flex; gap:8px; overflow-x:auto; margin-bottom:15px; padding: 5px;"></div>
     <div class="timer-grid">
         <div class="timer-card">總計時：<span class="timer-val" id="totalTime">0</span>s</div>
         <div class="timer-card">單題計時：<span class="timer-val" id="singleTime">0</span>s</div>
     </div>
-    <div class="card-box" style="text-align:left; margin-bottom:20px;">
+    <div class="card-box" style="text-align:left; margin-bottom:20px; padding: 25px;">
         <span id="subject" style="background:#E8F0FE; color:var(--primary); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:bold;">科目</span>
-        <div id="qText" style="font-size:1.25rem; font-weight:bold; margin-top:15px;">載入中...</div>
+        <div id="qText" style="font-size:1.3rem; font-weight:bold; margin-top:15px; line-height: 1.5;">載入中...</div>
         <div id="ansFeedback" class="feedback"></div>
     </div>
     <div id="options"></div>
@@ -70,22 +70,27 @@
 </div>
 
 <script>
-    const FIXED_URL = "您的GAS部署網址"; // <--- 請填入部署後的網址
+    // 請務必更新您的 GAS 部署網址
+    const FIXED_URL = "您的最新的GAS網址貼到這裡"; 
+    
     let quizData = [], index = 0, isProcessing = false, totalSec = 0, singleSec = 0, totalTimer, singleTimer;
     let selectedIds = [], currentAns = "", isMulti = false, userKey = sessionStorage.getItem('quiz_auth');
 
     async function fetchData(params) {
-        const resp = await fetch(`${FIXED_URL}?pwd=${encodeURIComponent(userKey)}&t=${Date.now()}&${params}`);
-        return await resp.json();
+        try {
+            const resp = await fetch(`${FIXED_URL}?pwd=${encodeURIComponent(userKey)}&t=${Date.now()}&${params}`);
+            return await resp.json();
+        } catch (e) { return {error: "網路連線失敗"}; }
     }
 
     async function checkAuth() {
         userKey = document.getElementById('pwdInput').value;
+        if(!userKey) return;
         const res = await fetchData('type=listSheets');
         if (res && !res.error) {
             sessionStorage.setItem('quiz_auth', userKey);
             initQuiz(res);
-        } else { alert("密碼錯誤"); }
+        } else { alert("密碼錯誤或 API 尚未部署成功"); }
     }
 
     async function initQuiz(sheets) {
@@ -96,7 +101,7 @@
         
         sheets.forEach(name => {
             const btn = document.createElement('button');
-            btn.style = `padding:8px 15px; border-radius:10px; border:none; cursor:pointer; font-weight:bold; ${name === curSheet ? 'background:var(--primary);color:white' : 'background:white'}`;
+            btn.style = `padding:8px 18px; border-radius:12px; border:none; cursor:pointer; font-weight:bold; white-space:nowrap; ${name === curSheet ? 'background:var(--primary);color:white' : 'background:white; color:#888'}`;
             btn.innerText = name;
             btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
             menu.appendChild(btn);
@@ -136,18 +141,20 @@
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
             btn.innerHTML = `<span class="opt-idx">(${idx + 1})</span> <span>${opt.text}</span>`;
-            btn.onclick = () => selectOption(btn, opt.id);
+            btn.dataset.id = opt.id;
+            btn.onclick = () => selectOption(btn);
             container.appendChild(btn);
         });
 
-        updateBtn(false, "請先選擇答案");
+        updateBtn(false, isMulti ? "請選擇答案" : "請點擊答案");
         singleSec = 0; document.getElementById('singleTime').innerText = "0";
         clearInterval(singleTimer);
         singleTimer = setInterval(() => { singleSec++; document.getElementById('singleTime').innerText = singleSec; }, 1000);
     }
 
-    function selectOption(btn, id) {
+    function selectOption(btn) {
         if (isProcessing) return;
+        const id = btn.dataset.id;
         if (isMulti) {
             btn.classList.toggle('selected');
             selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
@@ -166,19 +173,22 @@
         const isRight = JSON.stringify(correctArr) === JSON.stringify(userArr);
 
         document.querySelectorAll('.opt-btn').forEach(btn => {
-            // 簡化邏輯標示對錯...
+            const id = btn.dataset.id;
+            if (correctArr.includes(id)) btn.classList.add('correct');
+            else if (userArr.includes(id)) btn.classList.add('wrong');
         });
 
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
         fb.style.background = isRight ? "#E8F5E9" : "#FFEBEE";
-        fb.innerText = isRight ? `✨ 正確！(耗時：${singleSec}s)` : `❌ 錯誤，答案是：${currentAns}`;
+        fb.style.color = isRight ? "#2E7D32" : "#C62828";
+        fb.innerText = isRight ? `✨ 正確！\n(此題耗時：${singleSec}秒)` : `❌ 答錯了！正確答案：${currentAns}`;
         updateBtn(true, "下一題");
     }
 
     function handleAction() {
-        const btn = document.getElementById('mainBtn');
-        if (btn.innerText === "送出答案") judge();
+        const btnText = document.getElementById('mainBtn').innerText;
+        if (btnText === "送出答案") judge();
         else { index++; render(); }
     }
 
