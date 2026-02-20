@@ -1,29 +1,171 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-let userKey = sessionStorage.getItem('quiz_auth');
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jexams 雲端測驗 Pro</title>
+    <style>
+        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; }
+        .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
+        .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; }
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
+        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; width: 100%; transition: 0.2s; }
+        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
+        .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
+        .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
+        .action-btn { width: 100%; padding: 20px; border-radius: 18px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 25px; cursor: pointer; }
+        .action-btn.ready { background: var(--primary); box-shadow: 0 6px 16px rgba(0,122,255,0.3); }
+        .feedback-box { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="sheetMenu" class="menu-bar"></div>
+    <div id="info" style="font-size: 12px; color: #8E8E93; margin-bottom: 8px;"></div>
+    <div class="card">
+        <div><span id="subject" class="badge">讀取中</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
+        <div id="qText" class="q-text">請輸入密碼以讀取題目...</div>
+        <div id="ansFeedback" class="feedback-box"></div>
+    </div>
+    <div id="options" class="options-grid"></div>
+    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>請先選擇答案</button>
+</div>
 
-async function safeFetch(params) {
-    // 如果沒有存過密碼，則詢問使用者
-    if (!userKey) {
-        userKey = prompt("此測驗受密碼保護，請輸入 123456：");
-        if (!userKey) return null;
-        sessionStorage.setItem('quiz_auth', userKey);
-    }
-    
-    try {
-        // 關鍵：將密碼帶入 URL 參數 pwd
-        const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&${params}`);
-        const data = await resp.json();
-        
-        if (data.error) {
-            alert(data.error);
-            sessionStorage.removeItem('quiz_auth'); // 密碼錯了就清除快取
-            location.reload();
-            return null;
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
+    let userKey = sessionStorage.getItem('quiz_auth');
+
+    // Fisher-Yates 洗牌
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
         }
-        return data;
-    } catch (e) {
-        console.error("Fetch Error:", e);
-        alert("連線失敗，請檢查 GAS 是否部署為『所有人』存取。");
-        return null;
+        return array;
     }
-}
+
+    async function safeFetch(params) {
+        if (!userKey) {
+            userKey = prompt("請輸入密碼 123456：");
+            if (!userKey) return null;
+            sessionStorage.setItem('quiz_auth', userKey);
+        }
+        try {
+            const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&${params}`);
+            const data = await resp.json();
+            if (data.error) { alert(data.error); sessionStorage.removeItem('quiz_auth'); location.reload(); return null; }
+            return data;
+        } catch (e) { alert("連線失敗，請檢查權限設定。"); return null; }
+    }
+
+    window.onload = async () => {
+        const sheets = await safeFetch('type=listSheets');
+        if (!sheets) return;
+        const menu = document.getElementById('sheetMenu');
+        const curSheet = new URLSearchParams(window.location.search).get('sheet') || sheets[0];
+        sheets.forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = `menu-item ${name === curSheet ? 'active' : ''}`;
+            btn.innerText = name;
+            btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
+            menu.appendChild(btn);
+        });
+        rawData = await safeFetch(`sheet=${encodeURIComponent(curSheet)}`);
+        if (rawData) initQuiz();
+    };
+
+    function initQuiz() { quizData = shuffle([...rawData]); index = 0; render(); }
+
+    function render() {
+        if (index >= quizData.length) {
+            document.getElementById('qText').innerText = "🎉 測驗完成！";
+            document.getElementById('options').innerHTML = "";
+            return;
+        }
+        const q = quizData[index];
+        const cleanAns = q.ans.toString().replace(/，/g, ',').toUpperCase().trim();
+        const isMulti = cleanAns.includes(",");
+        const isTF = (cleanAns === "O" || cleanAns === "X");
+        
+        selectedIds = []; isProcessing = false;
+        document.getElementById('info').innerText = `第 ${index + 1} / ${quizData.length} 題`;
+        document.getElementById('subject').innerText = q.subject;
+        document.getElementById('qTypeBadge').innerText = isTF ? "是非題" : (isMulti ? "多選題" : "單選題");
+        document.getElementById('qText').innerText = q.q;
+        document.getElementById('ansFeedback').style.display = "none";
+        
+        const container = document.getElementById('options');
+        container.innerHTML = "";
+        let opts = (isTF ? ["O", "X"] : q.opts).map((t, i) => ({ text: t, id: isTF ? t.toUpperCase() : (i + 1).toString() }));
+        shuffle(opts);
+
+        opts.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = `${idx + 1}. ${opt.text}`; // 自動序號
+            btn.dataset.id = opt.id;
+            btn.onclick = () => {
+                if (isMulti) {
+                    btn.classList.toggle('selected');
+                    selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
+                    updateBtn(selectedIds.length > 0, "確認送出答案");
+                } else { judgeSingle(btn, opt.id, cleanAns); }
+            };
+            container.appendChild(btn);
+        });
+        updateBtn(false, isMulti ? "確認送出答案" : "請選擇答案");
+    }
+
+    function updateBtn(ready, text) {
+        const btn = document.getElementById('mainBtn');
+        btn.disabled = !ready; btn.innerText = text; btn.classList.toggle('ready', ready);
+    }
+
+    function judgeSingle(btn, id, ans) {
+        if (isProcessing) return; isProcessing = true;
+        const correct = (id === ans);
+        btn.classList.add(correct ? 'correct' : 'wrong');
+        if (!correct) {
+            document.querySelectorAll('.opt-btn').forEach(b => { if(b.dataset.id === ans) b.classList.add('correct'); });
+            recordError(quizData[index]);
+        }
+        showResult(correct, ans); updateBtn(true, "下一題");
+    }
+
+    async function handleAction() {
+        const btn = document.getElementById('mainBtn');
+        if (btn.innerText === "確認送出答案") {
+            isProcessing = true;
+            const q = quizData[index];
+            const ansArr = q.ans.toString().replace(/，/g, ',').toUpperCase().split(",").sort();
+            const userArr = selectedIds.sort();
+            const correct = JSON.stringify(ansArr) === JSON.stringify(userArr);
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                if (ansArr.includes(b.dataset.id)) b.classList.add('correct');
+                if (b.classList.contains('selected') && !ansArr.includes(b.dataset.id)) b.classList.add('wrong');
+            });
+            if (!correct) await recordError(q);
+            showResult(correct, ansArr.join(", ")); updateBtn(true, "下一題");
+        } else { index++; render(); }
+    }
+
+    function showResult(correct, ans) {
+        const fb = document.getElementById('ansFeedback');
+        fb.style.display = "block";
+        fb.style.background = correct ? "#E8F5E9" : "#FFEBEE";
+        fb.innerText = correct ? "✨ 正確！" : `❌ 錯誤。答案：${ans}`;
+    }
+
+    async function recordError(q) {
+        fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
+    }
+</script>
+</body>
+</html>
