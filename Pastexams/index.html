@@ -1,428 +1,248 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jexams 雲端測驗</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jexams 雲端測驗 Pro</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    <style>
+        :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; }
+        
+        /* UI Components */
+        .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
+        .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; }
+        .switch { display: inline-flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .switch input { display: none; }
+        .slider { width: 40px; height: 22px; background-color: #D1D1D6; border-radius: 20px; position: relative; transition: .3s; margin-right: 6px; }
+        .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
-<style>
-:root{
-    --primary:#007AFF;
-    --bg:#F2F2F7;
-    --success:#34C759;
-    --danger:#FF3B30;
-}
-body{
-    font-family:-apple-system,sans-serif;
-    background:var(--bg);
-    margin:0;
-    padding:15px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
-.container{
-    width:100%;
-    max-width:600px;
-}
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; }
+        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
+        .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .opt-btn { 
+            background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; 
+            text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; width: 100%; transition: 0.2s;
+        }
+        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
+        .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
+        .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
+        .opt-btn:disabled { cursor: not-allowed; opacity: 0.8; }
+        
+        .action-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; background: var(--disabled); color: white; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; transition: 0.3s; }
+        .action-btn.ready { background: var(--primary); box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+        .action-btn:disabled { cursor: not-allowed; transform: none !important; }
 
-.menu-bar{
-    display:flex;
-    background:#E5E5EA;
-    padding:4px;
-    border-radius:12px;
-    margin-bottom:15px;
-    overflow-x:auto;
-    gap:4px;
-}
-.menu-item{
-    flex:1;
-    border:none;
-    background:none;
-    padding:10px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:600;
-    font-size:14px;
-    white-space:nowrap;
-}
-.menu-item.active{
-    background:white;
-    color:var(--primary);
-    box-shadow:0 2px 8px rgba(0,0,0,0.1);
-}
-
-.top-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:15px;
-}
-.controls{
-    display:flex;
-    gap:12px;
-}
-.switch{
-    display:inline-flex;
-    align-items:center;
-    cursor:pointer;
-    font-size:13px;
-    font-weight:600;
-    color:#48484A;
-}
-.switch input{display:none;}
-.slider{
-    width:40px;
-    height:22px;
-    background:#D1D1D6;
-    border-radius:20px;
-    position:relative;
-    transition:.3s;
-    margin-right:6px;
-}
-.slider:before{
-    content:"";
-    position:absolute;
-    height:18px;
-    width:18px;
-    left:2px;
-    bottom:2px;
-    background:white;
-    border-radius:50%;
-    transition:.3s;
-}
-input:checked + .slider{background:var(--success);}
-input:checked + .slider:before{transform:translateX(18px);}
-
-.clear-btn{
-    background:var(--danger);
-    color:white;
-    border:none;
-    padding:8px 14px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:bold;
-    font-size:12px;
-}
-
-.card{
-    background:white;
-    border-radius:20px;
-    padding:25px;
-    box-shadow:0 4px 15px rgba(0,0,0,0.05);
-    margin-bottom:20px;
-}
-.badge-row{
-    display:flex;
-    gap:8px;
-    margin-bottom:10px;
-}
-.badge{
-    background:#E8F0FE;
-    color:var(--primary);
-    font-size:11px;
-    padding:4px 10px;
-    border-radius:6px;
-    font-weight:bold;
-}
-.badge-type{
-    background:#F2F2F7;
-    color:#666;
-}
-.q-text{
-    font-size:1.35rem;
-    font-weight:bold;
-    line-height:1.5;
-    color:#1C1C1E;
-}
-
-.options-grid{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-}
-.opt-btn{
-    background:white;
-    border:2px solid #E5E5EA;
-    border-radius:15px;
-    padding:18px;
-    text-align:left;
-    cursor:pointer;
-    font-size:1.1rem;
-    font-weight:600;
-    transition:all .2s;
-}
-.opt-btn.selected{
-    border-color:var(--primary);
-    background:#F0F7FF;
-    border-width:3px;
-}
-.opt-btn.correct{
-    background:var(--success)!important;
-    color:white!important;
-    border-color:var(--success)!important;
-}
-.opt-btn.wrong{
-    background:var(--danger)!important;
-    color:white!important;
-    border-color:var(--danger)!important;
-}
-
-.action-btn{
-    width:100%;
-    padding:20px;
-    border-radius:18px;
-    border:none;
-    background:#AEAEB2;
-    color:white;
-    font-size:1.1rem;
-    font-weight:bold;
-    margin-top:25px;
-    cursor:pointer;
-}
-.action-btn.ready{
-    background:var(--primary);
-    box-shadow:0 6px 16px rgba(0,122,255,0.3);
-}
-
-.feedback-box{
-    margin-top:20px;
-    padding:15px;
-    border-radius:12px;
-    display:none;
-    font-weight:bold;
-    text-align:center;
-}
-.fb-wrong{
-    background:#FFEBEE;
-    color:var(--danger);
-    border:1px solid #FFCDD2;
-}
-.fb-correct{
-    background:#E8F5E9;
-    color:var(--success);
-    border:1px solid #C8E6C9;
-}
-</style>
+        .feedback-box { margin-top: 15px; padding: 15px; border-radius: 12px; display: none; font-weight: bold; text-align: center; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 100; font-weight: bold; }
+    </style>
 </head>
-
 <body>
+
+<div id="loading" class="loading-overlay">處理中...</div>
+
 <div class="container">
+    <div id="sheetMenu" class="menu-bar"></div>
+    <div class="top-row">
+        <div style="display:flex; gap:10px;">
+            <label class="switch"><input type="checkbox" id="qRandom" checked onchange="initQuiz()"><span class="slider"></span> 題目隨機</label>
+            <label class="switch"><input type="checkbox" id="optRandom" checked onchange="render()"><span class="slider"></span> 選項隨機</label>
+        </div>
+        <button onclick="clearErrors()" style="border:none; background:none; color:var(--danger); font-weight:bold; cursor:pointer;">清除記錄</button>
+    </div>
 
-<div id="sheetMenu" class="menu-bar"></div>
+    <div id="info" style="font-size:12px; color:#888; margin-bottom:8px;"></div>
+    
+    <div class="card">
+        <div><span id="subject" class="badge">科目</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
+        <div id="qText" class="q-text">請選擇考卷...</div>
+        <div id="ansFeedback" class="feedback-box"></div>
+    </div>
 
-<div class="top-row">
-<div class="controls">
-<label class="switch">
-<input type="checkbox" id="qRandom" checked onchange="initQuiz()">
-<span class="slider"></span>題目隨機
-</label>
-<label class="switch">
-<input type="checkbox" id="optRandom" checked onchange="render()">
-<span class="slider"></span>選項隨機
-</label>
-</div>
-<button class="clear-btn" onclick="clearErrors()">清除記錄</button>
-</div>
-
-<div id="info" style="font-size:12px;color:#888;margin-bottom:8px;">載入中...</div>
-
-<div class="card">
-<div class="badge-row">
-<span id="subject" class="badge">科目</span>
-<span id="qTypeBadge" class="badge badge-type">判斷中</span>
-</div>
-<div id="qText" class="q-text">讀取試題中...</div>
-<div id="ansFeedback" class="feedback-box"></div>
-</div>
-
-<div id="options" class="options-grid"></div>
-
-<button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>
-請先選擇答案
-</button>
-
+    <div id="options" class="options-grid"></div>
+    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>請先選擇答案</button>
 </div>
 
 <script>
-const API_URL="https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
+    let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
 
-let rawData=[],quizData=[],index=0,selectedIds=[],isSubmitting=false;
-let currentSheet=new URLSearchParams(window.location.search).get('sheet');
-
-function shuffle(arr){
-    for(let i=arr.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [arr[i],arr[j]]=[arr[j],arr[i]];
+    // ✅ Fisher-Yates Shuffle 演算法
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
-    return arr;
-}
 
-window.onload=async()=>{
-try{
-const listResp=await fetch(`${API_URL}?type=listSheets`);
-const sheetNames=await listResp.json();
-const menu=document.getElementById('sheetMenu');
-if(!currentSheet)currentSheet=sheetNames[0];
+    // ✅ 通用 Fetch 錯誤處理
+    async function safeFetch(url, options = {}) {
+        const timeout = 8000;
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(id);
+            if (!response.ok) throw new Error("網路回應不正常");
+            return await response.json();
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            alert("連線失敗或逾時，請檢查網路後重新整理。");
+            document.getElementById('loading').style.display = 'none';
+            return null;
+        }
+    }
 
-sheetNames.forEach(name=>{
-const btn=document.createElement('button');
-btn.className=`menu-item ${name===currentSheet?'active':''}`;
-btn.innerText=name;
-btn.onclick=()=>location.search=`?sheet=${encodeURIComponent(name)}`;
-menu.appendChild(btn);
-});
+    window.onload = async () => {
+        const sheetNames = await safeFetch(`${API_URL}?type=listSheets`);
+        if (!sheetNames) return;
+        
+        const menu = document.getElementById('sheetMenu');
+        const currentSheet = new URLSearchParams(window.location.search).get('sheet') || sheetNames[0];
+        
+        sheetNames.forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = `menu-item ${name === currentSheet ? 'active' : ''}`;
+            btn.innerText = name;
+            btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
+            menu.appendChild(btn);
+        });
 
-const resp=await fetch(`${API_URL}?sheet=${currentSheet}`);
-rawData=await resp.json();
-initQuiz();
-}catch(e){
-document.getElementById('qText').innerText="❌ 載入失敗";
-console.error(e);
-}
-};
+        rawData = await safeFetch(`${API_URL}?sheet=${currentSheet}`);
+        if (rawData) initQuiz();
+    };
 
-function initQuiz(){
-quizData=document.getElementById('qRandom').checked?shuffle([...rawData]):[...rawData];
-index=0;
-render();
-}
+    function initQuiz() {
+        quizData = document.getElementById('qRandom').checked ? shuffle([...rawData]) : [...rawData];
+        index = 0; render();
+    }
 
-function render(){
+    function render() {
+        if (index >= quizData.length) {
+            document.getElementById('qText').innerText = "🎉 測驗完成！";
+            document.getElementById('options').innerHTML = "";
+            const btn = document.getElementById('mainBtn');
+            btn.innerText = "重新開始"; btn.disabled = false; btn.classList.add('ready');
+            btn.onclick = () => location.reload(); return;
+        }
 
-if(index>=quizData.length){
-document.getElementById('qText').innerText="🎉 測驗完成！";
-document.getElementById('options').innerHTML="";
-const mainBtn=document.getElementById('mainBtn');
-mainBtn.innerText="重新開始";
-mainBtn.disabled=false;
-mainBtn.classList.add('ready');
-mainBtn.onclick=()=>location.reload();
-return;
-}
+        const q = quizData[index];
+        const cleanAns = q.ans.toString().replace(/，/g, ',').toUpperCase().trim();
+        const isMulti = cleanAns.includes(",");
+        const isTF = (cleanAns === "O" || cleanAns === "X");
+        
+        selectedIds = [];
+        isProcessing = false;
+        document.getElementById('info').innerText = `第 ${index+1} / ${quizData.length} 題`;
+        document.getElementById('subject').innerText = q.subject;
+        document.getElementById('qTypeBadge').innerText = isTF ? "是非題" : (isMulti ? "多選題" : "單選題");
+        document.getElementById('qText').innerText = q.q;
+        document.getElementById('ansFeedback').style.display = "none";
+        
+        const container = document.getElementById('options');
+        container.innerHTML = "";
 
-isSubmitting=false;
-selectedIds=[];
+        let opts = (isTF ? ["O", "X"] : q.opts).map((t, i) => ({ text: t, id: isTF ? t.toUpperCase() : (i + 1).toString() }));
+        if (document.getElementById('optRandom').checked) shuffle(opts);
 
-const q=quizData[index];
-const cleanAns=q.ans.toString().replace(/，/g,',').replace(/\s/g,'').toUpperCase();
-const isMulti=cleanAns.includes(",");
-const isTF=(cleanAns==="O"||cleanAns==="X");
-const typeText=isTF?"是非題":(isMulti?"多選題":"單選題");
+        opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn'; btn.innerText = opt.text; btn.dataset.id = opt.id;
+            btn.onclick = () => isMulti ? toggleSelect(btn) : handleSingle(btn, opt.id, cleanAns);
+            container.appendChild(btn);
+        });
 
-document.getElementById('info').innerText=`第 ${index+1} / ${quizData.length} 題`;
-document.getElementById('subject').innerText=q.subject;
-document.getElementById('qTypeBadge').innerText=typeText;
-document.getElementById('qText').innerText=q.q;
-document.getElementById('ansFeedback').style.display="none";
+        updateActionBtn(isMulti ? "確認送出" : "請選擇答案", false);
+    }
 
-const container=document.getElementById('options');
-container.innerHTML="";
+    function toggleSelect(btn) {
+        btn.classList.toggle('selected');
+        selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
+        updateActionBtn("確認送出", selectedIds.length > 0);
+    }
 
-let opts=(isTF?["O","X"]:q.opts).map((text,i)=>({
-text,
-id:isTF?text.toUpperCase():(i+1).toString()
-}));
+    function updateActionBtn(text, ready) {
+        const btn = document.getElementById('mainBtn');
+        btn.innerText = text;
+        btn.disabled = !ready;
+        btn.classList.toggle('ready', ready);
+    }
 
-if(document.getElementById('optRandom').checked)
-opts=shuffle(opts);
+    async function handleSingle(btn, id, ans) {
+        if (isProcessing) return;
+        isProcessing = true;
+        lockOptions();
+        
+        const correct = (id === ans);
+        btn.classList.add(correct ? 'correct' : 'wrong');
+        if (!correct) {
+            document.querySelectorAll('.opt-btn').forEach(b => { if(b.dataset.id === ans) b.classList.add('correct'); });
+            await recordError(quizData[index]);
+        }
+        showFeedback(correct, ans);
+        updateActionBtn("下一題", true);
+    }
 
-opts.forEach(opt=>{
-const btn=document.createElement('button');
-btn.className='opt-btn';
-btn.innerText=opt.text;
-btn.dataset.id=opt.id;
+    async function handleAction() {
+        const btn = document.getElementById('mainBtn');
+        if (btn.innerText === "確認送出") {
+            if (isProcessing) return;
+            isProcessing = true;
+            lockOptions();
+            
+            const q = quizData[index];
+            const ansArr = q.ans.toString().replace(/，/g, ',').replace(/\s/g, '').toUpperCase().split(",").sort();
+            const userArr = selectedIds.sort();
+            const correct = JSON.stringify(ansArr) === JSON.stringify(userArr);
 
-btn.onclick=()=>{
-if(isMulti){
-btn.classList.toggle('selected');
-selectedIds=[...document.querySelectorAll('.opt-btn.selected')]
-.map(b=>b.dataset.id);
+            document.querySelectorAll('.opt-btn').forEach(b => {
+                if (ansArr.includes(b.dataset.id)) b.classList.add('correct');
+                if (b.classList.contains('selected') && !ansArr.includes(b.dataset.id)) b.classList.add('wrong');
+            });
 
-const mainBtn=document.getElementById('mainBtn');
-mainBtn.disabled=selectedIds.length===0;
-mainBtn.classList.toggle('ready',selectedIds.length>0);
-}else{
-handleSingle(opt.id,cleanAns,btn);
-}
-};
-container.appendChild(btn);
-});
+            if (!correct) await recordError(q);
+            showFeedback(correct, ansArr.join(","));
+            
+            // ✅ UX 修正：送出後 mainBtn 暫時變灰，引導使用者看結果，或直接設為 ready 進入下一題
+            updateActionBtn("下一題", true);
+        } else {
+            index++; render();
+        }
+    }
 
-const mainBtn=document.getElementById('mainBtn');
-mainBtn.innerText=isMulti?"確認送出答案":"下一題";
-mainBtn.disabled=true;
-mainBtn.classList.remove('ready');
-}
+    function lockOptions() {
+        document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+    }
 
-async function handleSingle(userId,correctAns,btn){
-if(isSubmitting)return;
-isSubmitting=true;
+    async function recordError(q) {
+        // 背景執行記錄，不阻塞 UI，但使用 try/catch
+        fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`).catch(e => console.error("Record failed", e));
+    }
 
-document.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);
+    function showFeedback(correct, ans) {
+        const fb = document.getElementById('ansFeedback');
+        fb.style.display = "block";
+        fb.style.background = correct ? "#E8F5E9" : "#FFEBEE";
+        fb.style.color = correct ? "#2E7D32" : "#C62828";
+        fb.innerText = correct ? "✨ 回答正確！" : `❌ 錯誤。答案：${ans}`;
+    }
 
-const isCorrect=userId===correctAns;
-btn.classList.add(isCorrect?'correct':'wrong');
-
-if(!isCorrect){
-document.querySelectorAll('.opt-btn')
-.forEach(b=>{if(b.dataset.id===correctAns)b.classList.add('correct');});
-await fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(quizData[index]))}`);
-}
-
-showFeedback(isCorrect,correctAns);
-const mainBtn=document.getElementById('mainBtn');
-mainBtn.disabled=false;
-mainBtn.classList.add('ready');
-}
-
-async function handleAction(){
-const mainBtn=document.getElementById('mainBtn');
-
-if(mainBtn.innerText==="確認送出答案"){
-if(isSubmitting)return;
-isSubmitting=true;
-
-const q=quizData[index];
-const cleanAns=q.ans.toString().replace(/，/g,',').replace(/\s/g,'').toUpperCase();
-const correctArr=cleanAns.split(",").sort();
-const userArr=[...selectedIds].sort();
-const isCorrect=JSON.stringify(correctArr)===JSON.stringify(userArr);
-
-document.querySelectorAll('.opt-btn').forEach(b=>{
-b.onclick=null;
-if(correctArr.includes(b.dataset.id))b.classList.add('correct');
-if(b.classList.contains('selected')&&!correctArr.includes(b.dataset.id))
-b.classList.add('wrong');
-});
-
-if(!isCorrect)
-await fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
-
-showFeedback(isCorrect,cleanAns);
-mainBtn.innerText="下一題";
-mainBtn.classList.remove('ready');
-
-}else{
-index++;
-render();
-}
-}
-
-function showFeedback(isCorrect,ans){
-const fb=document.getElementById('ansFeedback');
-fb.style.display="block";
-fb.className=`feedback-box ${isCorrect?'fb-correct':'fb-wrong'}`;
-fb.innerText=isCorrect?"✨ 正確！":`❌ 錯誤。答案：${ans}`;
-}
-
-async function clearErrors(){
-if(confirm("確定清除錯題記錄？")){
-await fetch(`${API_URL}?type=clearErrors`);
-alert("已清除！");
-}
-}
+    // 註冊 Service Worker (PWA 核心)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').then(() => console.log('SW registered'));
+        });
+    }
 </script>
-
 </body>
 </html>
