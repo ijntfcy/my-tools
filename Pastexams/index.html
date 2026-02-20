@@ -3,186 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exams Pro 系統</title>
+    <title>Jexams 測驗系統</title>
     <style>
-        :root { --primary: #3b82f6; --success: #10b981; --error: #ef4444; }
-        body { font-family: sans-serif; background: #f3f4f6; display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 600px; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        
-        /* 登入樣式 */
-        .login-box { text-align: center; }
-        input[type="password"] {
-            width: 80%; padding: 12px; margin: 20px 0; border: 2px solid #ddd; border-radius: 8px;
-            text-align: center; font-size: 1.2rem; outline: none; transition: 0.3s;
-        }
-        input[type="password"]:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        button { cursor: pointer; background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 1rem; }
-        button:disabled { background: #ccc; }
+        :root { --primary: #007bff; --success-bg: #4caf50; --error-bg: #ffebee; --error-text: #d32f2f; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .container { width: 100%; max-width: 600px; }
+        .hidden { display: none !important; }
 
-        /* 測驗樣式 */
-        .hidden { display: none; }
-        .nav-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .nav-btn { background: #e5e7eb; color: #374151; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
-        .nav-btn.active { background: var(--primary); color: white; }
-        .quiz-info { font-size: 0.9rem; color: #666; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        .option { display: block; width: 100%; text-align: left; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; background: white; transition: 0.2s; }
-        .option:hover { background: #f9fafb; }
-        .option.selected { background: #dbeafe; border-color: var(--primary); }
-        .option.correct { background: #d1fae5; border-color: var(--success); color: #065f46; font-weight: bold; }
-        .option.wrong { background: #fee2e2; border-color: var(--error); color: #991b1b; }
+        /* 登入樣式 */
+        .login-card { background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input[type="password"] { width: 80%; padding: 12px; margin: 20px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 1.1rem; }
+
+        /* 頂部導航 */
+        .nav-bar { display: flex; background: #e0e0e0; border-radius: 12px; margin-bottom: 20px; padding: 4px; }
+        .nav-btn { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #555; }
+        .nav-btn.active { background: white; border-radius: 10px; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* 計時器區塊 */
+        .timer-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .timer-box { flex: 1; background: white; padding: 15px; border-radius: 18px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .timer-label { font-size: 12px; color: #888; margin-bottom: 5px; }
+        .timer-val { font-size: 22px; font-weight: bold; color: var(--primary); }
+
+        /* 題目卡片 */
+        .quiz-card { background: white; border-radius: 25px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
+        .page-info { position: absolute; right: 30px; top: 30px; color: #bbb; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-right: 8px; margin-bottom: 10px; }
+        .badge-cat { background: #e3f2fd; color: #2196f3; }
+        .badge-type { background: #f5f5f5; color: #757575; }
+        h2 { font-size: 22px; margin-top: 10px; }
+
+        /* 選項與回饋 */
+        .option { width: 100%; text-align: left; padding: 18px; margin-bottom: 12px; border: none; border-radius: 15px; 
+                  background: var(--success-bg); color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .option.selected { outline: 3px solid var(--primary); }
+        .feedback { background: var(--error-bg); color: var(--error-text); padding: 20px; border-radius: 15px; text-align: center; 
+                    margin-bottom: 20px; font-weight: bold; line-height: 1.6; }
+        
+        button.action-btn { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="login-section" class="login-box">
-        <h2>Exams Pro 系統登入</h2>
-        <input type="password" id="pwd-input" placeholder="請輸入密碼">
+    <div id="login-section" class="login-card">
+        <h2>Jexams 系統登入</h2>
+        <input type="password" id="pwd-input" placeholder="輸入密碼">
         <br>
-        <button id="login-btn" onclick="handleLogin()">進入系統</button>
+        <button class="action-btn" onclick="handleLogin()">進入系統</button>
     </div>
 
     <div id="quiz-section" class="hidden">
         <div id="nav-container" class="nav-bar"></div>
-        <div class="quiz-info">
-            <span id="subject-name">科目</span>
-            <span id="progress">0 / 0</span>
+
+        <div class="timer-row">
+            <div class="timer-box">
+                <div class="timer-label">總計時</div>
+                <div class="timer-val" id="total-time">0s</div>
+            </div>
+            <div class="timer-box">
+                <div class="timer-label">單題計時</div>
+                <div class="timer-val" id="step-time">0s</div>
+            </div>
         </div>
-        <div class="quiz-info">
-            <span>總用時: <span id="total-time">0</span>s</span>
-            <span>單題用時: <span id="step-time">0</span>s</span>
-        </div>
-        <hr>
-        <div id="question-box">
-            <h3 id="q-text">載入中...</h3>
+
+        <div class="quiz-card">
+            <div class="page-info" id="progress">1 / 13</div>
+            <div class="badge badge-cat" id="subject-name">生活常識</div>
+            <div class="badge badge-type" id="type-text">多選題</div>
+            <h2 id="q-text">載入中...</h2>
+
+            <div id="feedback-box" class="feedback hidden">
+                ❌ 錯誤！正確答案：<span id="correct-ans"></span><br>
+                (耗時：<span id="spent-time"></span>秒)
+            </div>
+
             <div id="options-container"></div>
+
             <div style="margin-top: 20px; text-align: right;">
-                <label><input type="checkbox" id="shuffle-check"> 題目隨機化</label>
-                <button id="submit-btn" class="hidden" onclick="checkMultipleAnswer()">送出答案</button>
-                <button id="next-btn" class="hidden" onclick="nextQuestion()">下一題</button>
+                <button id="submit-btn" class="action-btn hidden" onclick="checkMultiple()">送出答案</button>
+                <button id="next-btn" class="action-btn hidden" onclick="nextQuestion()">下一題</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
-    let currentPwd = "";
-    let quizData = [];
-    let currentIndex = 0;
-    let timer, stepTimer, totalSeconds = 0, stepSeconds = 0;
+    const API_URL = "您的_GAS_網址"; 
+    let currentPwd = "", quizData = [], currentIndex = 0;
+    let totalSec = 0, stepSec = 0;
 
     async function handleLogin() {
         const pwd = document.getElementById('pwd-input').value;
-        const btn = document.getElementById('login-btn');
-        btn.disabled = true; btn.innerText = "驗證中...";
-
-        try {
-            const resp = await fetch(`${API_URL}?pwd=${pwd}&type=listSheets`);
-            const result = await resp.json();
-            if (result.status === "success") {
-                currentPwd = pwd;
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('quiz-section').classList.remove('hidden');
-                renderNav(result.data);
-                startTimers();
-            } else {
-                alert("密碼錯誤！");
-            }
-        } catch (e) { alert("連線失敗"); }
-        btn.disabled = false; btn.innerText = "進入系統";
+        const resp = await fetch(`${API_URL}?pwd=${pwd}&type=listSheets`);
+        const result = await resp.json();
+        if (result.status === "success") {
+            currentPwd = pwd;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('quiz-section').classList.remove('hidden');
+            renderNav(result.data);
+            setInterval(() => { totalSec++; stepSec++; 
+                document.getElementById('total-time').innerText = totalSec + 's';
+                document.getElementById('step-time').innerText = stepSec + 's';
+            }, 1000);
+        } else { alert("密碼錯誤"); }
     }
 
     function renderNav(sheets) {
         const container = document.getElementById('nav-container');
-        sheets.forEach(name => {
+        sheets.forEach((name, i) => {
             const btn = document.createElement('div');
-            btn.className = 'nav-btn';
+            btn.className = `nav-btn ${i===0?'active':''}`;
             btn.innerText = name;
-            btn.onclick = () => loadQuiz(name);
+            btn.onclick = (e) => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                loadQuiz(name);
+            };
             container.appendChild(btn);
         });
-        if (sheets.length > 0) loadQuiz(sheets[0]);
+        loadQuiz(sheets[0]);
     }
 
     async function loadQuiz(sheetName) {
         const resp = await fetch(`${API_URL}?pwd=${currentPwd}&type=getQuiz&sheet=${sheetName}`);
         const result = await resp.json();
         quizData = result.data;
-        if (document.getElementById('shuffle-check').checked) quizData.sort(() => Math.random() - 0.5);
         currentIndex = 0;
         showQuestion();
     }
 
     function showQuestion() {
-        stepSeconds = 0;
+        stepSec = 0;
         const q = quizData[currentIndex];
-        document.getElementById('q-text').innerText = (q.isMultiple ? "[多選] " : "[單選] ") + q.question;
+        document.getElementById('q-text').innerText = q.question;
         document.getElementById('subject-name').innerText = q.subject;
+        document.getElementById('type-text').innerText = q.isMultiple ? "多選題" : "單選題";
         document.getElementById('progress').innerText = `${currentIndex + 1} / ${quizData.length}`;
+        document.getElementById('feedback-box').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
         
         const container = document.getElementById('options-container');
         container.innerHTML = "";
-        document.getElementById('submit-btn').classList.toggle('hidden', !q.isMultiple);
-        document.getElementById('next-btn').classList.add('hidden');
-
+        
         q.options.forEach((opt, i) => {
             const btn = document.createElement('button');
             btn.className = 'option';
-            btn.innerHTML = `(${i+1}) ${opt}`;
-            btn.onclick = () => handleSelect(i, btn);
+            btn.innerText = opt;
+            btn.onclick = () => q.isMultiple ? btn.classList.toggle('selected') : judge((i+1).toString());
             container.appendChild(btn);
         });
+        document.getElementById('submit-btn').classList.toggle('hidden', !q.isMultiple);
     }
 
-    function handleSelect(index, btn) {
+    function checkMultiple() {
+        const selected = Array.from(document.querySelectorAll('.option.selected')).map(btn => 
+            (quizData[currentIndex].options.indexOf(btn.innerText) + 1).toString()
+        ).sort().join(',');
+        judge(selected);
+    }
+
+    function judge(userAns) {
         const q = quizData[currentIndex];
-        if (q.isMultiple) {
-            btn.classList.toggle('selected');
-        } else {
-            const isCorrect = (index + 1).toString() === q.answer;
-            judge(isCorrect, index);
+        const isCorrect = userAns === q.answer.split(',').sort().join(',');
+        
+        if (!isCorrect) {
+            document.getElementById('feedback-box').classList.remove('hidden');
+            document.getElementById('correct-ans').innerText = q.answer;
+            document.getElementById('spent-time').innerText = stepSec;
         }
-    }
-
-    function checkMultipleAnswer() {
-        const q = quizData[currentIndex];
-        const selected = Array.from(document.querySelectorAll('.option.selected'))
-                              .map(btn => btn.innerText.match(/\((\d+)\)/)[1])
-                              .sort().join(',');
-        judge(selected === q.answer.split(',').sort().join(','), null);
-    }
-
-    function judge(isCorrect, singleIndex) {
-        const q = quizData[currentIndex];
-        const btns = document.querySelectorAll('.option');
-        const correctAnswers = q.answer.split(',');
-
-        btns.forEach((btn, i) => {
-            btn.onclick = null; // 禁用點擊
-            if (correctAnswers.includes((i + 1).toString())) btn.classList.add('correct');
-            else if (singleIndex === i || btn.classList.contains('selected')) btn.classList.add('wrong');
-        });
-        document.getElementById('next-btn').classList.remove('hidden');
         document.getElementById('submit-btn').classList.add('hidden');
+        document.getElementById('next-btn').classList.remove('hidden');
+        // 鎖定按鈕
+        document.querySelectorAll('.option').forEach(b => b.onclick = null);
     }
 
     function nextQuestion() {
-        if (currentIndex < quizData.length - 1) {
-            currentIndex++;
-            showQuestion();
-        } else {
-            alert("測驗結束！");
-        }
-    }
-
-    function startTimers() {
-        setInterval(() => {
-            totalSeconds++;
-            stepSeconds++;
-            document.getElementById('total-time').innerText = totalSeconds;
-            document.getElementById('step-time').innerText = stepSeconds;
-        }, 1000);
+        if (currentIndex < quizData.length - 1) { currentIndex++; showQuestion(); }
+        else { alert("測驗完成！"); }
     }
 </script>
 </body>
