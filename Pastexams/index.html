@@ -7,7 +7,7 @@
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 600px; }
+        .container { width: 100%; max-width: 600px; width: 100%; }
         
         /* 選單導航 */
         .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 15px; overflow-x: auto; gap: 4px; }
@@ -27,7 +27,9 @@
 
         /* 題目卡片 */
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; width: 100%; box-sizing: border-box; }
-        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .badge-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
+        .badge-type { background: #F2F2F7; color: #666; }
         .q-text { font-size: 1.35rem; font-weight: bold; line-height: 1.5; color: #1C1C1E; }
         .info-row { display: flex; justify-content: space-between; font-size: 12px; color: #8E8E93; margin-bottom: 8px; width: 100%; }
 
@@ -39,7 +41,8 @@
             font-weight: 600; transition: all 0.2s; color: #1C1C1E; 
             width: 100%; box-sizing: border-box; display: block;
         }
-        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; color: var(--primary); }
+        /* 選取中的樣式 */
+        .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; box-shadow: 0 0 0 1px var(--primary); }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
         
@@ -67,7 +70,10 @@
         <div id="timer">總計時: 00:00</div>
     </div>
     <div class="card">
-        <div id="subject" class="badge">科目</div>
+        <div class="badge-row">
+            <span id="subject" class="badge">科目</span>
+            <span id="qTypeBadge" class="badge badge-type">題型</span>
+        </div>
         <div id="qText" class="q-text">正在讀取試題...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
@@ -120,18 +126,28 @@
         }
 
         const q = quizData[index];
-        selectedIds = [];
+        selectedIds = []; // 重設選取狀態
+        
+        // 題型判斷邏輯 
+        const cleanAns = q.ans.toString().toUpperCase().trim();
+        let typeText = "選擇題";
+        if (cleanAns === "O" || cleanAns === "X") typeText = "是非題";
+        else if (cleanAns.includes(",")) typeText = "多選題";
+
         document.getElementById('progress').innerText = `第 ${index+1} / ${quizData.length} 題`;
         document.getElementById('subject').innerText = q.subject || "通用";
+        document.getElementById('qTypeBadge').innerText = typeText;
         document.getElementById('qText').innerText = q.q;
         document.getElementById('ansFeedback').style.display = "none";
         
         const container = document.getElementById('options');
         container.innerHTML = "";
 
-        let isBoolean = (q.ans.toUpperCase() === "O" || q.ans.toUpperCase() === "X");
         let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
-        let opts = optsData.map((text, i) => ({ text: text, id: isBoolean ? text.toUpperCase() : (i + 1).toString() }));
+        let opts = optsData.map((text, i) => ({ 
+            text: text, 
+            id: (typeText === "是非題") ? text.toUpperCase().trim() : (i + 1).toString() 
+        }));
 
         if (document.getElementById('optRandom').checked) opts.sort(() => Math.random() - 0.5);
 
@@ -140,66 +156,79 @@
             btn.className = 'opt-btn';
             btn.innerText = opt.text;
             btn.dataset.id = opt.id;
-            btn.onclick = () => handleSelect(btn, opt.id);
+            // 點擊事件
+            btn.onclick = () => {
+                if (typeText === "多選題") {
+                    btn.classList.toggle('selected');
+                    updateMultiSelectStatus();
+                } else {
+                    handleSingleSelect(btn, opt.id, cleanAns);
+                }
+            };
             container.appendChild(btn);
         });
 
         const mainBtn = document.getElementById('mainBtn');
-        mainBtn.innerText = q.ans.includes(",") ? "確認送出答案" : "請選擇答案";
-        mainBtn.disabled = true; mainBtn.classList.remove('ready');
+        mainBtn.innerText = (typeText === "多選題") ? "確認送出答案" : "下一題";
+        mainBtn.disabled = true;
+        mainBtn.classList.remove('ready');
     }
 
-    // 重寫後的點擊處理邏輯，確保多選與單選都能正確點擊
-    function handleSelect(btn, id) {
-        const q = quizData[index];
-        const correctAns = q.ans.toUpperCase().replace(/\s/g, '');
-        const isMulti = correctAns.includes(",");
-
-        if (!isMulti) {
-            // 單選邏輯：點擊後直接開牌
-            document.querySelectorAll('.opt-btn').forEach(b => {
-                b.style.pointerEvents = 'none'; // 禁止再次點擊
-                if (b.dataset.id === correctAns) b.classList.add('correct');
-            });
-            if (id !== correctAns) {
-                btn.classList.add('wrong');
-                showFeedback(false, q.ans);
-                fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
-            } else { showFeedback(true); }
-            const mainBtn = document.getElementById('mainBtn');
-            mainBtn.innerText = "下一題";
-            mainBtn.disabled = false;
-            mainBtn.classList.add('ready');
-        } else {
-            // 多選邏輯：允許切換選取狀態 
-            btn.classList.toggle('selected');
-            selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
-            const mainBtn = document.getElementById('mainBtn');
-            mainBtn.disabled = (selectedIds.length === 0);
-            mainBtn.classList.toggle('ready', selectedIds.length > 0);
-        }
-    }
-
-    function handleAction() {
+    // 更新多選題按鈕狀態
+    function updateMultiSelectStatus() {
+        selectedIds = Array.from(document.querySelectorAll('.opt-btn.selected')).map(b => b.dataset.id);
         const mainBtn = document.getElementById('mainBtn');
+        mainBtn.disabled = (selectedIds.length === 0);
+        mainBtn.classList.toggle('ready', selectedIds.length > 0);
+    }
+
+    // 單選與是非題處理
+    async function handleSingleSelect(btn, id, ans) {
+        document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null); // 鎖定
+        const isCorrect = id === ans;
+        
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        if (!isCorrect) {
+            document.querySelectorAll('.opt-btn').forEach(b => { if(b.dataset.id === ans) b.classList.add('correct'); });
+            showFeedback(false, ans);
+            await fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(quizData[index]))}`);
+        } else {
+            showFeedback(true);
+        }
+        
+        const mainBtn = document.getElementById('mainBtn');
+        mainBtn.disabled = false;
+        mainBtn.classList.add('ready');
+    }
+
+    // 處理底部按鈕動作
+    async function handleAction() {
         const q = quizData[index];
+        const cleanAns = q.ans.toString().toUpperCase().trim();
+        const mainBtn = document.getElementById('mainBtn');
+
         if (mainBtn.innerText === "確認送出答案") {
-            const correctArr = q.ans.toUpperCase().replace(/\s/g, '').split(",").sort();
+            const correctArr = cleanAns.replace(/\s/g, '').split(",").sort();
             const userArr = selectedIds.sort();
             const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
 
             document.querySelectorAll('.opt-btn').forEach(b => {
-                b.style.pointerEvents = 'none';
+                b.onclick = null;
                 if (correctArr.includes(b.dataset.id)) b.classList.add('correct');
                 if (b.classList.contains('selected') && !correctArr.includes(b.dataset.id)) b.classList.add('wrong');
             });
 
             if (!isCorrect) {
                 showFeedback(false, q.ans);
-                fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
-            } else { showFeedback(true); }
+                await fetch(`${API_URL}?type=recordError&data=${encodeURIComponent(JSON.stringify(q))}`);
+            } else {
+                showFeedback(true);
+            }
             mainBtn.innerText = "下一題";
-        } else { index++; render(); }
+        } else {
+            index++;
+            render();
+        }
     }
 
     function showFeedback(isCorrect, ansText) {
@@ -211,8 +240,8 @@
 
     async function clearErrors() {
         if (confirm("確定要清除所有錯題記錄嗎？")) {
-            const resp = await fetch(`${API_URL}?type=clearErrors`);
-            alert("已成功清除錯題資料！");
+            await fetch(`${API_URL}?type=clearErrors`);
+            alert("已成功清除！");
         }
     }
 </script>
