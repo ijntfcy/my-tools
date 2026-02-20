@@ -2,121 +2,175 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>個人財務監控</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #f2f2f7; --card: #ffffff; --primary: #007aff; --danger: #ff3b30; --success: #34c759; --text: #1c1c1e; }
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-user-select: none; user-select: none; }
-        .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); padding: 15px; border-bottom: 1px solid #d1d1d6; position: sticky; top: 0; z-index: 100; display: none; }
-        .toolbar { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; }
-        .btn { flex: 1; padding: 12px; border-radius: 14px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; }
-        .btn-sync { background: var(--success); }
-        .btn-logout { background: var(--danger); }
-        .container { padding: 12px; max-width: 500px; margin: 0 auto; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border-left: 6px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
-        .card-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; color: var(--primary); }
-        .row { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f2f2f7; }
-        .label { color: #8e8e93; font-size: 0.9rem; }
-        .value { font-weight: 600; }
-        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .modal { background: white; padding: 40px 30px; border-radius: 30px; text-align: center; width: 88%; max-width: 340px; }
-        input { width: 100%; padding: 16px; margin: 25px 0; border: 2px solid #e5e5ea; border-radius: 16px; font-size: 1.8rem; text-align: center; outline: none; }
-        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: bold; }
+        :root {
+            --bg: #000000;
+            --card-bg: rgba(28, 28, 30, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #0A84FF;
+            --text: #ffffff;
+            --text-dim: #8E8E93;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 背景微光效果 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -10%; left: -10%;
+            width: 40%; height: 40%;
+            background: radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 40px 0;
+        }
+
+        /* 個人名片區 */
+        .profile {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .avatar {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #1c1c1e, #3a3a3c);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            font-size: 2rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(48, 209, 88, 0.1);
+            color: #30D158;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* 網格系統 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            aspect-ratio: 1/1;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:active { transform: scale(0.95); background: rgba(44, 44, 46, 0.9); }
+
+        .card i { font-size: 1.5rem; color: var(--accent); }
+        .card-title { font-weight: 600; font-size: 1.1rem; margin-top: 10px; }
+        .card-desc { color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; }
+
+        /* 特殊方塊：時鐘 */
+        .card-wide {
+            grid-column: span 2;
+            aspect-ratio: unset;
+            height: 100px;
+        }
+
+        .clock { font-size: 1.8rem; font-weight: 700; letter-spacing: -1px; }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-<div id="loginOverlay" class="overlay">
-    <div class="modal">
-        <h2 style="margin:0">🔒 身分驗證</h2>
-        <input type="password" id="accPwd" placeholder="請輸入密碼" inputmode="numeric">
-        <button class="btn-login" onclick="login()">驗證權限</button>
+<div class="container">
+    <div class="profile">
+        <div class="avatar"><i class="fas fa-user-shield"></i></div>
+        <h1 style="margin: 10px 0 5px; font-size: 1.5rem;">Digital Terminal</h1>
+        <div class="status-badge"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> System Encrypted</div>
+    </div>
+
+    <div class="grid">
+        <div class="card card-wide">
+            <div id="date-display" style="color: var(--accent); font-size: 0.8rem; font-weight: 600;">LOADING...</div>
+            <div id="clock-display" class="clock">00:00:00</div>
+        </div>
+
+        <a href="assets/index.html" class="card">
+            <i class="fas fa-vault"></i>
+            <div>
+                <div class="card-title">Vault</div>
+                <div class="card-desc">Financial Management</div>
+            </div>
+        </a>
+
+        <div class="card" onclick="alert('Module loading...')">
+            <i class="fas fa-project-diagram"></i>
+            <div>
+                <div class="card-title">Nodes</div>
+                <div class="card-desc">System Infrastructure</div>
+            </div>
+        </div>
+
+        <div class="card" onclick="alert('Update check completed.')">
+            <i class="fas fa-microchip"></i>
+            <div>
+                <div class="card-title">Kernel</div>
+                <div class="card-desc">v2.4.0-stable</div>
+            </div>
+        </div>
+
+        <div class="card" onclick="window.location.href='https://github.com'">
+            <i class="fab fa-github"></i>
+            <div>
+                <div class="card-title">GitHub</div>
+                <div class="card-desc">Source Repository</div>
+            </div>
+        </div>
     </div>
 </div>
-
-<div id="header" class="header">
-    <div class="toolbar">
-        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> 同步資料</button>
-        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 登出</button>
-    </div>
-</div>
-
-<div id="dataList" class="container"></div>
 
 <script>
-    const CONFIG = {
-        // 🛡️ 確認這是你「管理部署」中最新的網址
-        API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec"
-    };
-
-    let CURRENT_PWD = sessionStorage.getItem('active_session_pwd') || "";
-
-    window.onload = () => {
-        if(CURRENT_PWD) {
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('header').style.display = 'block';
-            fetchData();
-        }
-    };
-
-    function login() {
-        const pwd = document.getElementById('accPwd').value;
-        if(pwd) {
-            CURRENT_PWD = pwd;
-            sessionStorage.setItem('active_session_pwd', pwd);
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('header').style.display = 'block';
-            fetchData();
-        }
+    function updateClock() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('date-display').innerText = now.toLocaleDateString('en-US', options).toUpperCase();
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString('en-US', { hour12: false });
     }
-
-    function logout() {
-        sessionStorage.clear();
-        location.reload();
-    }
-
-    async function fetchData() {
-        const list = document.getElementById('dataList');
-        list.innerHTML = '<div style="text-align:center;padding:50px;color:#888;">⏳ 正在安全連線...</div>';
-        try {
-            const res = await fetch(`${CONFIG.API_URL}?pwd=${encodeURIComponent(CURRENT_PWD)}`);
-            const json = await res.json();
-            if(json.status === "success") {
-                render(json.headers, json.data);
-            } else {
-                alert("❌ " + json.message);
-                logout();
-            }
-        } catch(e) {
-            list.innerHTML = '<div style="text-align:center;padding:50px;color:red;">❌ 同步失敗，請確認 GAS 部署設定</div>';
-        }
-    }
-
-    function render(headers, data) {
-        document.getElementById('dataList').innerHTML = data.map(item => {
-            let rows = headers.map(h => {
-                let val = item[h];
-                if (h.includes('金額')) {
-                    // 移除 NT$ 字樣方便計算或統一格式
-                    val = String(val).replace('NT$', '').trim();
-                    val = Number(val.replace(/,/g, '')).toLocaleString();
-                }
-                if (h.includes('日期')) {
-                    const d = new Date(val);
-                    // 💡 修正時區偏移，確保日期與試算表一致
-                    if (!isNaN(d)) val = new Date(d.getTime() + 8*3600*1000).toISOString().split('T')[0];
-                }
-                if (h.includes('利率')) {
-                    val = (parseFloat(val) * 100).toFixed(2) + '%';
-                }
-                return `<div class="row"><span class="label">${h}</span><span class="value">${val || '-'}</span></div>`;
-            }).join('');
-            
-            return `<div class="card"><div class="card-title"><i class="fas fa-university"></i> ${item['帳戶名稱'] || '帳戶'}</div>${rows}</div>`;
-        }).join('');
-    }
+    setInterval(updateClock, 1000);
+    updateClock();
 </script>
+
 </body>
 </html>
