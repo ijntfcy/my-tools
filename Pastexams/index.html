@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jexams 雲端測驗</title>
+    <title>Jexams Pro 測驗系統</title>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --success: #34C759; --danger: #FF3B30; --disabled: #AEAEB2; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
@@ -13,9 +13,9 @@
         .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .badge { background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin-right: 5px; }
-        .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; }
-        .options-grid { display: flex; flex-direction: column; gap: 12px; }
-        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; width: 100%; transition: 0.2s; }
+        .q-text { font-size: 1.3rem; font-weight: bold; line-height: 1.5; margin-top: 10px; color: #1C1C1E; }
+        .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .opt-btn { background: white; border: 2px solid #E5E5EA; border-radius: 15px; padding: 18px; text-align: left; cursor: pointer; font-size: 1.1rem; font-weight: 600; transition: 0.2s; color: #1C1C1E; }
         .opt-btn.selected { border-color: var(--primary); background: #F0F7FF; }
         .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
@@ -30,7 +30,7 @@
     <div id="info" style="font-size: 12px; color: #8E8E93; margin-bottom: 8px;"></div>
     <div class="card">
         <div><span id="subject" class="badge">科目</span><span id="qTypeBadge" class="badge" style="background:#F2F2F7; color:#666;">題型</span></div>
-        <div id="qText" class="q-text">讀取中...</div>
+        <div id="qText" class="q-text">載入中，請輸入密碼...</div>
         <div id="ansFeedback" class="feedback-box"></div>
     </div>
     <div id="options" class="options-grid"></div>
@@ -42,7 +42,6 @@
     let rawData = [], quizData = [], index = 0, selectedIds = [], isProcessing = false;
     let userKey = sessionStorage.getItem('quiz_auth');
 
-    // Fisher-Yates 洗牌
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -53,34 +52,23 @@
 
     async function safeFetch(params) {
         if (!userKey) {
-            userKey = prompt("此測驗受密碼保護，請輸入 123456：");
+            userKey = prompt("請輸入密碼 123456：");
             if (!userKey) return null;
             sessionStorage.setItem('quiz_auth', userKey);
         }
         try {
             const resp = await fetch(`${API_URL}?pwd=${encodeURIComponent(userKey)}&${params}`);
             const data = await resp.json();
-            if (data.error) { 
-                alert(data.error); 
-                sessionStorage.removeItem('quiz_auth'); 
-                location.reload(); return null; 
-            }
+            if (data.error) { alert(data.error); sessionStorage.removeItem('quiz_auth'); location.reload(); return null; }
             return data;
-        } catch (e) { 
-            alert("連線失敗，請檢查 GAS 是否部署為『所有人』存取。"); 
-            return null; 
-        }
+        } catch (e) { alert("API連線失敗，請檢查GAS部署權限。"); return null; }
     }
 
     window.onload = async () => {
-        // 1. 抓取分頁清單
         const sheets = await safeFetch('type=listSheets');
         if (!sheets) return;
-
         const menu = document.getElementById('sheetMenu');
         const curSheet = new URLSearchParams(window.location.search).get('sheet') || sheets[0];
-        
-        menu.innerHTML = "";
         sheets.forEach(name => {
             const btn = document.createElement('button');
             btn.className = `menu-item ${name === curSheet ? 'active' : ''}`;
@@ -88,17 +76,11 @@
             btn.onclick = () => location.search = `?sheet=${encodeURIComponent(name)}`;
             menu.appendChild(btn);
         });
-
-        // 2. 抓取題目
         rawData = await safeFetch(`sheet=${encodeURIComponent(curSheet)}`);
         if (rawData) initQuiz();
     };
 
-    function initQuiz() { 
-        quizData = shuffle([...rawData]); 
-        index = 0; 
-        render(); 
-    }
+    function initQuiz() { quizData = shuffle([...rawData]); index = 0; render(); }
 
     function render() {
         if (index >= quizData.length) {
@@ -112,7 +94,7 @@
         const isTF = (cleanAns === "O" || cleanAns === "X");
         
         selectedIds = []; isProcessing = false;
-        document.getElementById('info').innerText = `題目：${index + 1} / ${quizData.length}`;
+        document.getElementById('info').innerText = `題號：${index + 1} / ${quizData.length}`;
         document.getElementById('subject').innerText = q.subject;
         document.getElementById('qTypeBadge').innerText = isTF ? "是非題" : (isMulti ? "多選題" : "單選題");
         document.getElementById('qText').innerText = q.q;
@@ -177,7 +159,7 @@
         const fb = document.getElementById('ansFeedback');
         fb.style.display = "block";
         fb.style.background = correct ? "#E8F5E9" : "#FFEBEE";
-        fb.innerText = correct ? "✨ 正確！" : `❌ 錯誤。答案：${ans}`;
+        fb.innerText = correct ? "✨ 正確！" : `❌ 錯誤。答案為：${ans}`;
     }
 
     async function recordError(q) {
