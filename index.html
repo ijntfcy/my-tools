@@ -1,120 +1,15 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的資產負債表</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --bg: #f2f2f7; --card: #ffffff; --primary: #007aff; --danger: #ff3b30; --success: #34c759; --text: #1c1c1e; }
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background: var(--bg); margin: 0; padding: 0; color: var(--text); }
-        .header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 15px; border-bottom: 1px solid #d1d1d6; position: sticky; top: 0; z-index: 100; display: none; }
-        .toolbar { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; }
-        .btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; }
-        .btn-sync { background: var(--success); }
-        .btn-logout { background: var(--danger); }
-        .container { padding: 12px; max-width: 500px; margin: 0 auto; }
-        .card { background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 15px; border-left: 6px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .card.test-account { border-left-color: #ff9500 !important; background: #fffaf0 !important; }
-        .card-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 15px; color: var(--primary); }
-        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
-        .label { color: #8e8e93; font-size: 0.95rem; }
-        .value { font-weight: 600; font-size: 1rem; }
-        .high-rate { color: var(--danger); font-weight: 800; }
-        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .modal { background: white; padding: 40px 30px; border-radius: 28px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 15px; margin: 25px 0; border: 2px solid #e5e5ea; border-radius: 15px; font-size: 1.8rem; text-align: center; outline: none; }
-        .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: bold; font-size: 1.1rem; }
-        .loading { text-align: center; padding: 50px; color: #8e8e93; }
-    </style>
-</head>
-<body>
-
-<div id="loginOverlay" class="overlay">
-    <div class="modal">
-        <h2>🔓 帳戶解鎖</h2>
-        <input type="password" id="accPwd" placeholder="••••" inputmode="numeric">
-        <button class="btn-login" onclick="login()">確認進入</button>
-    </div>
-</div>
-
-<div id="header" class="header">
-    <div class="toolbar">
-        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> 同步更新</button>
-        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 安全登出</button>
-    </div>
-</div>
-
-<div class="container" id="dataList"></div>
-
-<script>
-    const CONFIG = {
-        API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec", 
-        PWD_LIST: ["8888", "abcd1234", "9999"] 
-    };
-
-    let CURRENT_PWD = sessionStorage.getItem('active_session_pwd') || "";
-
-    window.onload = () => {
-        if(CURRENT_PWD) {
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('header').style.display = 'block';
-            fetchData();
-        }
+const CONFIG = {
+        // 保持 API 網址，但刪除 PWD_LIST
+        API_URL: "你的GAS網址" 
     };
 
     function login() {
         const pwd = document.getElementById('accPwd').value;
-        if(CONFIG.PWD_LIST.includes(pwd)) {
+        if(pwd) { // 不在前端檢查對錯，直接交給後端 API 驗證
             CURRENT_PWD = pwd;
             sessionStorage.setItem('active_session_pwd', pwd);
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('header').style.display = 'block';
             fetchData();
-        } else { alert("代碼錯誤"); }
+        }
     }
-
-    function logout() {
-        sessionStorage.removeItem('active_session_pwd');
-        location.reload();
-    }
-
-    async function fetchData() {
-        const list = document.getElementById('dataList');
-        list.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 正在同步雲端資料...</div>';
-        try {
-            const res = await fetch(`${CONFIG.API_URL}?pwd=${CURRENT_PWD}`);
-            const json = await res.json();
-            if(json.status === "success") render(json.headers, json.data);
-        } catch(e) { list.innerHTML = '<div class="loading">❌ 同步失敗</div>'; }
-    }
-
-    function render(headers, data) {
-        document.getElementById('dataList').innerHTML = data.map(item => {
-            const isTest = Object.values(item).some(v => String(v).toLowerCase().includes('test'));
-            let rows = headers.map(h => {
-                let val = item[h];
-                let valClass = "value";
-                
-                if (h.includes('利率') && parseFloat(val) >= 0.015) valClass = "value high-rate";
-                if (h.includes('利率') && !isNaN(parseFloat(val))) val = (parseFloat(val) * 100).toFixed(2) + '%';
-                if (h.includes('金額') && !isNaN(val) && val !== "") val = Number(val).toLocaleString();
-                
-                // ✨ 這裡處理日期格式
-                if (h.includes('日期') && val) {
-                    const d = new Date(val);
-                    if(!isNaN(d.getTime())) {
-                        val = d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-                    }
-                }
-
-                return `<div class="row"><span class="label">${h}</span><span class="${valClass}">${val || '-'}</span></div>`;
-            }).join('');
-            
-            return `<div class="card ${isTest ? 'test-account' : ''}"><div class="card-title">${item['帳戶名稱'] || '未命名'}</div>${rows}</div>`;
-        }).join('');
-    }
-</script>
-</body>
-</html>
