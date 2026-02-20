@@ -16,8 +16,8 @@
         .btn-logout { background: var(--danger); }
         .container { padding: 12px; max-width: 500px; margin: 0 auto; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border-left: 6px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
-        .card-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 12px; color: var(--primary); }
-        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+        .card-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; color: var(--primary); }
+        .row { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f2f2f7; }
         .label { color: #8e8e93; font-size: 0.9rem; }
         .value { font-weight: 600; }
         .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
@@ -30,24 +30,24 @@
 
 <div id="loginOverlay" class="overlay">
     <div class="modal">
-        <h2 style="margin:0">🔒 安全驗證</h2>
+        <h2 style="margin:0">🔒 身分驗證</h2>
         <input type="password" id="accPwd" placeholder="請輸入密碼" inputmode="numeric">
-        <button class="btn-login" onclick="login()">驗證進入</button>
+        <button class="btn-login" onclick="login()">驗證權限</button>
     </div>
 </div>
 
 <div id="header" class="header">
     <div class="toolbar">
-        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> 同步</button>
+        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> 同步資料</button>
         <button class="btn btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 登出</button>
     </div>
 </div>
 
-<div class="container" id="dataList"></div>
+<div id="dataList" class="container"></div>
 
 <script>
     const CONFIG = {
-        // 🛡️ 確認此處網址是「管理部署」中最新的 Web App URL
+        // 🛡️ 確認這是你「管理部署」中最新的網址
         API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec"
     };
 
@@ -79,20 +79,18 @@
 
     async function fetchData() {
         const list = document.getElementById('dataList');
-        list.innerHTML = '<div style="text-align:center;padding:50px;">⏳ 安全連線中...</div>';
-        
+        list.innerHTML = '<div style="text-align:center;padding:50px;color:#888;">⏳ 正在安全連線...</div>';
         try {
             const res = await fetch(`${CONFIG.API_URL}?pwd=${encodeURIComponent(CURRENT_PWD)}`);
             const json = await res.json();
-            
             if(json.status === "success") {
                 render(json.headers, json.data);
             } else {
-                alert("❌ 驗證失敗：後端回報代碼無效");
+                alert("❌ " + json.message);
                 logout();
             }
         } catch(e) {
-            list.innerHTML = '<div style="text-align:center;padding:50px;">❌ 連線失敗：請檢查 GAS 部署權限或 API 網址</div>';
+            list.innerHTML = '<div style="text-align:center;padding:50px;color:red;">❌ 同步失敗，請確認 GAS 部署設定</div>';
         }
     }
 
@@ -100,16 +98,23 @@
         document.getElementById('dataList').innerHTML = data.map(item => {
             let rows = headers.map(h => {
                 let val = item[h];
-                if (h.includes('金額')) val = Number(val).toLocaleString();
-                if (h.includes('利率')) val = (parseFloat(val) * 100).toFixed(2) + '%';
+                if (h.includes('金額')) {
+                    // 移除 NT$ 字樣方便計算或統一格式
+                    val = String(val).replace('NT$', '').trim();
+                    val = Number(val.replace(/,/g, '')).toLocaleString();
+                }
                 if (h.includes('日期')) {
                     const d = new Date(val);
-                    val = isNaN(d) ? val : d.toISOString().split('T')[0];
+                    // 💡 修正時區偏移，確保日期與試算表一致
+                    if (!isNaN(d)) val = new Date(d.getTime() + 8*3600*1000).toISOString().split('T')[0];
+                }
+                if (h.includes('利率')) {
+                    val = (parseFloat(val) * 100).toFixed(2) + '%';
                 }
                 return `<div class="row"><span class="label">${h}</span><span class="value">${val || '-'}</span></div>`;
             }).join('');
             
-            return `<div class="card"><div class="card-title"><i class="fas fa-wallet"></i> ${item['帳戶名稱'] || '未命名'}</div>${rows}</div>`;
+            return `<div class="card"><div class="card-title"><i class="fas fa-university"></i> ${item['帳戶名稱'] || '帳戶'}</div>${rows}</div>`;
         }).join('');
     }
 </script>
