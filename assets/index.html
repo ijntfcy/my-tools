@@ -3,125 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vault Console</title>
+    <title>My Sweet Vault</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
-            --bg: #000000; 
-            --card-bg: #1c1c1e; 
-            --accent: #0A84FF; 
-            --success: #32D74B; 
-            --warning: #FFD60A;
-            --danger: #FF453A;
-            --text-main: #FFFFFF;
-            --text-sub: #8E8E93;
-            --border: rgba(255, 255, 255, 0.1);
+            --bg: #F9F9F7; 
+            --card-bg: #FFFFFF; 
+            --accent: #A68E74; /* 溫暖木質棕 */
+            --success: #89A38D; /* 莫蘭迪綠 */
+            --warning: #D9B08C; /* 暖橘調 */
+            --text-main: #4A4A4A;
+            --text-sub: #9B9B9B;
+            --shadow: rgba(166, 142, 116, 0.08);
         }
         
-        * { box-sizing: border-box; font-family: -apple-system, "SF Pro Text", sans-serif; }
+        * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
         
         body { 
             background: var(--bg); margin: 0; padding: 0; color: var(--text-main); 
-            -webkit-user-select: none; user-select: none; 
-            background-attachment: fixed;
+            -webkit-user-select: none; user-select: none;
         }
 
-        /* 毛玻璃導覽列 */
+        /* 頂部導覽列：溫潤白 */
         .header { 
-            background: rgba(0, 0, 0, 0.75); 
-            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); 
-            padding: 18px; border-bottom: 0.5px solid var(--border); 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
+            padding: 16px 20px; border-bottom: 1px solid #EDEDE8; 
             position: sticky; top: 0; z-index: 100; display: none;
         }
         
-        .toolbar { display: flex; gap: 12px; max-width: 500px; margin: 0 auto; align-items: center; }
-        .page-title { flex-grow: 1; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .toolbar { display: flex; gap: 15px; max-width: 500px; margin: 0 auto; align-items: center; }
+        .page-title { flex-grow: 1; font-weight: 600; font-size: 1.1rem; color: var(--accent); text-align: center; }
         
-        .btn-icon { 
-            background: rgba(255,255,255,0.1); border: none; width: 40px; height: 40px; 
-            border-radius: 12px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        .btn-circle { 
+            background: #FFFFFF; border: 1px solid #EDEDE8; width: 42px; height: 42px; 
+            border-radius: 50%; color: var(--accent); cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px var(--shadow); transition: 0.2s;
         }
+        .btn-circle:active { transform: scale(0.9); background: #F5F5F2; }
 
-        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
+        .container { padding: 25px 20px; max-width: 500px; margin: 0 auto; }
 
-        /* 資產卡片 */
+        /* 溫馨風卡片 */
         .card { 
-            background: var(--card-bg); border-radius: 24px; padding: 24px; 
-            margin-bottom: 20px; border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: transform 0.2s;
-        }
-        .card:active { transform: scale(0.98); }
-        
-        .card-header { 
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 18px;
+            background: var(--card-bg); border-radius: 28px; padding: 24px; 
+            margin-bottom: 25px; border: none;
+            box-shadow: 0 10px 25px var(--shadow);
+            position: relative; overflow: hidden;
         }
         
-        .bank-info { display: flex; align-items: center; gap: 12px; }
+        /* 卡片裝飾小圓點 */
+        .card::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
+            background: var(--accent); opacity: 0.3;
+        }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .bank-info { display: flex; align-items: center; gap: 14px; }
         .bank-icon { 
-            width: 44px; height: 44px; background: rgba(10, 132, 255, 0.1); 
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            color: var(--accent); font-size: 1.2rem;
+            width: 48px; height: 48px; background: #FDFBF9; 
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 1.3rem; border: 1px solid #F2EEE9;
         }
         
-        .bank-name { font-weight: 700; font-size: 1.1rem; }
-        .acc-type { color: var(--text-sub); font-size: 0.8rem; margin-top: 2px; }
+        .bank-name { font-weight: 700; font-size: 1.15rem; color: #3D3D3D; }
+        .acc-type { color: var(--text-sub); font-size: 0.85rem; margin-top: 3px; }
 
-        /* 數據列設計 */
         .data-row { 
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-top: 0.5px solid var(--border);
+            padding: 14px 0; border-top: 1px dashed #F2EEE9;
         }
         
-        .label { color: var(--text-sub); font-size: 0.85rem; font-weight: 500; }
-        .value { font-weight: 600; font-size: 1rem; }
+        .label { color: var(--text-sub); font-size: 0.9rem; }
+        .value { font-weight: 600; color: #4A4A4A; }
         
-        /* 金額與利率特殊樣式 */
-        .val-primary { font-size: 1.4rem; font-weight: 800; color: var(--success); letter-spacing: -0.5px; font-family: 'SF Mono', monospace; }
-        .rate-badge { 
-            background: rgba(255, 214, 10, 0.15); color: var(--warning); 
-            padding: 4px 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+        /* 金額強烈對比 */
+        .val-primary { font-size: 1.35rem; font-weight: 700; color: var(--accent); font-family: 'Lato', sans-serif; }
+        .rate-tag { 
+            background: #FDF7F2; color: var(--warning); 
+            padding: 5px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 700;
         }
 
-        /* 登入視窗美化 */
+        /* 登入視窗：柔和簡約 */
         .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .modal { text-align: center; width: 85%; max-width: 320px; }
+        .modal { 
+            background: white; padding: 45px 35px; border-radius: 40px; 
+            text-align: center; width: 88%; max-width: 340px;
+            box-shadow: 0 20px 40px var(--shadow);
+        }
         .modal-icon { 
-            width: 70px; height: 70px; background: rgba(10, 132, 255, 0.1); 
-            border-radius: 20px; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;
-            color: var(--accent); font-size: 2rem; border: 1px solid rgba(10, 132, 255, 0.2);
+            width: 80px; height: 80px; background: #FDFBF9; 
+            border-radius: 30px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 2.2rem; border: 1px solid #F2EEE9;
         }
         input { 
-            width: 100%; padding: 18px; margin-bottom: 20px; border: 1px solid var(--border); 
-            background: #1c1c1e; color: white; border-radius: 16px; 
-            font-size: 1.8rem; text-align: center; outline: none; letter-spacing: 10px;
+            width: 100%; padding: 18px; margin-bottom: 25px; border: 1px solid #F2EEE9; 
+            background: #FDFBF9; color: var(--text-main); border-radius: 20px; 
+            font-size: 1.6rem; text-align: center; outline: none;
         }
-        .btn-primary { 
-            width: 100%; padding: 16px; background: var(--accent); color: white; 
-            border: none; border-radius: 16px; font-weight: 700; font-size: 1rem;
+        .btn-main { 
+            width: 100%; padding: 18px; background: var(--accent); color: white; 
+            border: none; border-radius: 20px; font-weight: 700; font-size: 1.05rem;
+            box-shadow: 0 8px 15px rgba(166, 142, 116, 0.2);
         }
 
-        .loading-box { text-align: center; margin-top: 100px; color: var(--text-sub); }
+        .loading-state { text-align: center; margin-top: 120px; color: var(--text-sub); }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
 <div id="loginOverlay" class="overlay">
     <div class="modal">
-        <div class="modal-icon"><i class="fas fa-fingerprint"></i></div>
-        <h2 style="margin:0 0 10px">Vault Access</h2>
-        <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom:30px;">Identity Verification Required</p>
+        <div class="modal-icon"><i class="fas fa-leaf"></i></div>
+        <h2 style="margin:0 0 10px; color:#3D3D3D;">Welcome Back</h2>
+        <p style="color:var(--text-sub); font-size:0.95rem; margin-bottom:35px;">請輸入通關代碼</p>
         <input type="password" id="accPwd" placeholder="••••" inputmode="numeric" maxlength="4">
-        <button class="btn-primary" onclick="login()">Unlock Terminal</button>
+        <button class="btn-main" onclick="login()">開啟我的帳本</button>
     </div>
 </div>
 
 <div id="header" class="header">
     <div class="toolbar">
-        <button class="btn-icon" onclick="logout()"><i class="fas fa-chevron-left"></i></button>
-        <div class="page-title">ASSET CONSOLE</div>
-        <button class="btn-icon" onclick="fetchData()"><i class="fas fa-sync-alt"></i></button>
+        <button class="btn-circle" onclick="logout()"><i class="fas fa-home"></i></button>
+        <div class="page-title">我的資產概覽</div>
+        <button class="btn-circle" onclick="fetchData()"><i class="fas fa-redo-alt"></i></button>
     </div>
 </div>
 
@@ -135,10 +142,7 @@
     let CURRENT_PWD = sessionStorage.getItem('active_session_pwd') || "";
 
     window.onload = () => {
-        if(CURRENT_PWD) {
-            showConsole();
-            fetchData();
-        }
+        if(CURRENT_PWD) { showUI(); fetchData(); }
     };
 
     function login() {
@@ -146,12 +150,12 @@
         if(pwd) {
             CURRENT_PWD = pwd;
             sessionStorage.setItem('active_session_pwd', pwd);
-            showConsole();
+            showUI();
             fetchData();
         }
     }
 
-    function showConsole() {
+    function showUI() {
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('header').style.display = 'block';
     }
@@ -163,46 +167,44 @@
 
     async function fetchData() {
         const list = document.getElementById('dataList');
-        list.innerHTML = '<div class="loading-box"><i class="fas fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:15px">Establishing Secure Link...</p></div>';
+        list.innerHTML = '<div class="loading-state"><i class="fas fa-seedling fa-spin fa-2x"></i><p style="margin-top:20px; font-style: italic;">正在為您準備資料...</p></div>';
         try {
             const res = await fetch(`${CONFIG.API_URL}?pwd=${encodeURIComponent(CURRENT_PWD)}`);
             const json = await res.json();
             if(json.status === "success") {
                 render(json.headers, json.data);
             } else {
-                alert("Security Breach: Invalid Credentials");
+                alert("驗證失敗，請重新嘗試");
                 logout();
             }
         } catch(e) {
-            list.innerHTML = '<div class="loading-box" style="color:var(--danger)">❌ Link Interrupted</div>';
+            list.innerHTML = '<div class="loading-state">❌ 連線似乎有點問題</div>';
         }
     }
 
     function render(headers, data) {
         document.getElementById('dataList').innerHTML = data.map(item => {
-            let detailRows = headers.map(h => {
+            let details = headers.map(h => {
+                if (h === '帳戶名稱') return '';
                 let val = item[h];
                 
-                // 跳過標題已有的名稱
-                if (h === '帳戶名稱') return '';
-
-                // 金額美化
+                // 金額美化 (改為暖棕色)
                 if (h.includes('金額')) {
                     let num = String(val).replace(/[^0-9.-]/g, '');
                     let formattedNum = isNaN(num) ? val : Number(num).toLocaleString();
-                    return `<div class="data-row"><span class="label">${h}</span><span class="value val-primary">NT$ ${formattedNum}</span></div>`;
+                    return `<div class="data-row"><span class="label">${h}</span><span class="value val-primary">$ ${formattedNum}</span></div>`;
                 }
 
-                // 利率美化
+                // 利率標籤
                 if (h.includes('利率')) {
                     let rate = (parseFloat(val) * 100).toFixed(2) + '%';
-                    return `<div class="data-row"><span class="label">${h}</span><span class="rate-badge">${rate}</span></div>`;
+                    return `<div class="data-row"><span class="label">${h}</span><span class="rate-tag">${rate}</span></div>`;
                 }
 
-                // 日期修正
+                // 日期
                 if (h.includes('日期')) {
                     const d = new Date(val);
-                    val = isNaN(d) ? val : new Date(d.getTime() + 8*3600*1000).toISOString().split('T')[0];
+                    val = isNaN(d) ? val : new Date(d.getTime() + 8*3600*1000).toLocaleDateString();
                 }
 
                 return `<div class="data-row"><span class="label">${h}</span><span class="value">${val || '-'}</span></div>`;
@@ -212,14 +214,14 @@
             <div class="card">
                 <div class="card-header">
                     <div class="bank-info">
-                        <div class="bank-icon"><i class="fas fa-university"></i></div>
+                        <div class="bank-icon"><i class="fas fa-coffee"></i></div>
                         <div>
-                            <div class="bank-name">${item['帳戶名稱'] || 'Standard Account'}</div>
-                            <div class="acc-type">${item['帳戶類別'] || 'Personal Asset'}</div>
+                            <div class="bank-name">${item['帳戶名稱'] || '我的帳戶'}</div>
+                            <div class="acc-type">${item['帳戶類別'] || '儲蓄計畫'}</div>
                         </div>
                     </div>
                 </div>
-                ${detailRows}
+                ${details}
             </div>`;
         }).join('');
     }
