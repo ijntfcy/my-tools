@@ -1,11 +1,73 @@
-const CONFIG = {
-        // 保持 API 網址，但刪除 PWD_LIST
-        API_URL: "你的GAS網址" 
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>個人財務系統</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #f2f2f7; --card: #ffffff; --primary: #007aff; --danger: #ff3b30; --success: #34c759; --text: #1c1c1e; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        body { background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-user-select: none; } /* 禁用選取文字 */
+        
+        .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-bottom: 1px solid #d1d1d6; position: sticky; top: 0; z-index: 100; display: none; }
+        .toolbar { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; }
+        .btn { flex: 1; padding: 12px; border-radius: 14px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; }
+        .btn-sync { background: var(--success); }
+        .btn-logout { background: var(--danger); }
+
+        .container { padding: 12px; max-width: 500px; margin: 0 auto; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border-left: 6px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
+        .card.test-account { border-left-color: #ff9500 !important; background: #fffaf0 !important; }
+        .card-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 12px; color: var(--primary); }
+        
+        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+        .label { color: #8e8e93; font-size: 0.9rem; }
+        .value { font-weight: 600; color: #3a3a3c; }
+        .high-rate { color: var(--danger); font-weight: 800; }
+
+        .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal { background: white; padding: 40px 30px; border-radius: 30px; text-align: center; width: 88%; max-width: 340px; }
+        input { width: 100%; padding: 16px; margin: 25px 0; border: 2px solid #e5e5ea; border-radius: 16px; font-size: 1.8rem; text-align: center; outline: none; }
+        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: bold; font-size: 1.1rem; }
+    </style>
+</head>
+<body oncontextmenu="return false;"> <div id="loginOverlay" class="overlay">
+    <div class="modal">
+        <h2 style="margin:0">系統鎖定</h2>
+        <input type="password" id="accPwd" placeholder="請輸入代碼" inputmode="numeric">
+        <button class="btn-login" onclick="login()">驗證身分</button>
+    </div>
+</div>
+
+<div id="header" class="header">
+    <div class="toolbar">
+        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> 同步</button>
+        <button class="btn btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 登出</button>
+    </div>
+</div>
+
+<div class="container" id="dataList"></div>
+
+<script>
+    // 🛡️ 這裡不再放密碼清單，只放 API 網址
+    const CONFIG = {
+        API_URL: "你的_GAS_部署網址" 
+    };
+
+    let CURRENT_PWD = sessionStorage.getItem('active_session_pwd') || "";
+
+    window.onload = () => {
+        if(CURRENT_PWD) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('header').style.display = 'block';
+            fetchData();
+        }
     };
 
     function login() {
         const pwd = document.getElementById('accPwd').value;
-        if(pwd) { // 不在前端檢查對錯，直接交給後端 API 驗證
+        if(pwd) {
             CURRENT_PWD = pwd;
             sessionStorage.setItem('active_session_pwd', pwd);
             document.getElementById('loginOverlay').style.display = 'none';
@@ -13,3 +75,51 @@ const CONFIG = {
             fetchData();
         }
     }
+
+    function logout() {
+        sessionStorage.clear();
+        location.reload();
+    }
+
+    async function fetchData() {
+        const list = document.getElementById('dataList');
+        list.innerHTML = '<div style="text-align:center;padding:50px;color:#888;">正在進行安全連線...</div>';
+        try {
+            const res = await fetch(`${CONFIG.API_URL}?pwd=${CURRENT_PWD}`);
+            const json = await res.json();
+            
+            if(json.status === "success") {
+                render(json.headers, json.data);
+            } else {
+                alert("驗證失敗或權限不足");
+                logout();
+            }
+        } catch(e) {
+            list.innerHTML = '<div style="text-align:center;padding:50px;">❌ 同步失敗，請重新登入</div>';
+        }
+    }
+
+    function render(headers, data) {
+        document.getElementById('dataList').innerHTML = data.map(item => {
+            const isTest = Object.values(item).some(v => String(v).toLowerCase().includes('test'));
+            let rows = headers.map(h => {
+                let val = item[h];
+                let valClass = "value";
+                
+                if (h.includes('利率') && parseFloat(val) >= 0.015) valClass += " high-rate";
+                if (h.includes('利率')) val = (parseFloat(val) * 100).toFixed(2) + '%';
+                if (h.includes('金額')) val = Number(val).toLocaleString();
+                if (h.includes('日期') || h.includes('更新')) {
+                    const d = new Date(val);
+                    if (!isNaN(d)) val = d.toISOString().split('T')[0];
+                }
+
+                return `<div class="row"><span class="label">${h}</span><span class="${valClass}">${val || '-'}</span></div>`;
+            }).join('');
+            
+            return `<div class="card ${isTest ? 'test-account' : ''}"><div class="card-title"><i class="fas fa-wallet"></i> ${item['帳戶名稱'] || '未命名'}</div>${rows}</div>`;
+        }).join('');
+    }
+</script>
+</body>
+</html>
