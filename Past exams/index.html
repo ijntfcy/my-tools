@@ -1,46 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jexams 雲端測驗系統</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        :root { --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --bg: #F2F2F7; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; }
+        
+        .menu-bar { display: flex; background: #E5E5EA; padding: 4px; border-radius: 12px; margin-bottom: 12px; }
+        .menu-item { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .menu-item.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
+        .control-panel { display: flex; justify-content: flex-start; gap: 20px; margin-bottom: 15px; padding-left: 5px; font-size: 14px; font-weight: bold; }
+        
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 15px; position: relative; }
+        .subject-tag { position: absolute; top: 12px; left: 20px; background: #E8F0FE; color: var(--primary); font-size: 11px; padding: 3px 8px; border-radius: 5px; }
+        .q-text { font-size: 1.25rem; font-weight: 700; line-height: 1.5; margin-top: 15px; color: #1C1C1E; }
+
+        /* 答案提示區塊 */
+        .ans-feedback { margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: bold; display: none; transition: 0.3s; }
+        .feedback-correct { background: #E8F5E9; color: var(--success); border: 1px solid var(--success); }
+        .feedback-wrong { background: #FFEBEE; color: var(--danger); border: 1px solid var(--danger); }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .opt-btn { background: white; border: 1.5px solid #E5E5EA; border-radius: 12px; padding: 15px; text-align: left; cursor: pointer; font-size: 1rem; transition: 0.2s; color: #1C1C1E; }
+        .opt-btn.selected { border-color: var(--primary); background: #E8F0FE; }
+        .opt-btn.correct { background: var(--success) !important; color: white !important; border-color: var(--success); }
+        .opt-btn.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger); }
+        
+        .action-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; background: #D1D1D6; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .action-btn.ready { background: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="menu-bar">
+        <button class="menu-item" id="m-Jexams" onclick="changeSheet('Jexams')">Jexams</button>
+        <button class="menu-item" id="m-擴充用1" onclick="changeSheet('擴充用1')">擴充用1</button>
+        <button class="menu-item" id="m-擴充用2" onclick="changeSheet('擴充用2')">擴充用2</button>
+    </div>
+
+    <div class="control-panel">
+        <label><input type="checkbox" id="qRandom" onchange="initQuiz()"> 題目隨機</label>
+        <label><input type="checkbox" id="optRandom" onchange="render()"> 選項隨機</label>
+    </div>
+
+    <div class="card">
+        <span id="subject" class="subject-tag">科目</span>
+        <div id="qText" class="q-text">讀取中...</div>
+        <div id="ansFeedback" class="ans-feedback"></div>
+    </div>
+
+    <div id="options" class="options-grid"></div>
+    <button id="mainBtn" class="action-btn" onclick="handleAction()" disabled>下一題</button>
+</div>
+
 <script>
-    // 請填入您最新的部署網址
-    const API_URL = "您的GAS網址"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqJXMzDORmYWyyZQqgx5fKCTzpBc8vkfwbJpfPZpa-EgHPU0MY5Zh5CSsZbyfPcuEXKQ/exec";
     let rawData = [], quizData = [], index = 0, selectedIds = [];
 
-    // 單選題與是非題的判斷邏輯
+    const currentSheet = new URLSearchParams(window.location.search).get('sheet') || 'Jexams';
+    document.getElementById(`m-${currentSheet}`).classList.add('active');
+
+    window.onload = async () => {
+        try {
+            const resp = await fetch(`${API_URL}?sheet=${currentSheet}`);
+            rawData = await resp.json();
+            initQuiz();
+        } catch (e) { document.getElementById('qText').innerText = "連線失敗，請檢查 GAS 權限。"; }
+    };
+
+    function changeSheet(name) { window.location.search = `?sheet=${name}`; }
+    
+    function initQuiz() {
+        quizData = document.getElementById('qRandom').checked ? [...rawData].sort(() => Math.random() - 0.5) : [...rawData];
+        index = 0; render();
+    }
+
+    function render() {
+        if (index >= quizData.length) { document.getElementById('qText').innerText = "測驗完成！"; document.getElementById('options').innerHTML = ""; return; }
+        const q = quizData[index];
+        selectedIds = [];
+        
+        document.getElementById('subject').innerText = q.subject || "未分類";
+        document.getElementById('qText').innerText = q.q;
+        const feedback = document.getElementById('ansFeedback');
+        feedback.style.display = "none";
+        feedback.innerText = "";
+
+        const container = document.getElementById('options');
+        container.innerHTML = "";
+
+        // 建立選項資料物件 (保留原始 ID 用於對照答案)
+        let optsData = (q.opts && q.opts.length > 0) ? q.opts : ["O", "X"];
+        let opts = optsData.map((t, i) => ({ 
+            text: t, 
+            id: (q.ans === "O" || q.ans === "X") ? t.toUpperCase() : (i + 1).toString() 
+        }));
+
+        if (document.getElementById('optRandom').checked) opts.sort(() => Math.random() - 0.5);
+
+        opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn animate__animated fadeIn';
+            btn.innerText = opt.text;
+            btn.dataset.id = opt.id; // 綁定 ID，不論位置怎麼變，ID 不變
+            btn.onclick = () => handleSelect(btn, opt.id, q.ans.toUpperCase());
+            container.appendChild(btn);
+        });
+
+        const mainBtn = document.getElementById('mainBtn');
+        mainBtn.innerText = q.ans.includes(",") ? "確認送出" : "下一題";
+        mainBtn.disabled = true;
+        mainBtn.classList.remove('ready');
+    }
+
     function handleSelect(btn, id, ans) {
-        if (!ans.includes(",")) { // 單選判定
+        const feedback = document.getElementById('ansFeedback');
+        if (!ans.includes(",")) { // 單選
             const allBtns = document.querySelectorAll('.opt-btn');
             allBtns.forEach(b => {
-                b.onclick = null; // 禁止重複點擊
-                // 如果按鈕的 ID 等於正確答案，變綠色
-                if (b.dataset.id === ans) {
-                    b.classList.add('correct');
-                }
+                b.onclick = null; // 鎖定點擊
+                if (b.dataset.id === ans) b.classList.add('correct'); // 正確標綠
             });
-            // 如果點選的 ID 不等於正確答案，點選的按鈕變紅色
-            if (id !== ans) {
-                btn.classList.add('wrong');
+
+            feedback.style.display = "block";
+            if (id === ans) {
+                feedback.className = "ans-feedback feedback-correct";
+                feedback.innerText = "✨ 正確！";
+            } else {
+                btn.classList.add('wrong'); // 選錯標紅
+                feedback.className = "ans-feedback feedback-wrong";
+                feedback.innerText = `❌ 答錯了，正確答案是：${ans}`;
             }
             document.getElementById('mainBtn').disabled = false;
             document.getElementById('mainBtn').classList.add('ready');
-        } else { // 複選判定
+        } else { // 複選
             btn.classList.toggle('selected');
-            // 管理複選清單...
+            if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id);
+            else selectedIds.push(id);
+            document.getElementById('mainBtn').disabled = selectedIds.length === 0;
+            document.getElementById('mainBtn').classList.toggle('ready', selectedIds.length > 0);
         }
     }
 
-    // 複選題按下「確認送出」後的顯示邏輯
     function handleAction() {
+        const mainBtn = document.getElementById('mainBtn');
         const q = quizData[index];
-        if (document.getElementById('mainBtn').innerText === "確認送出") {
-            const correctArr = q.ans.split(",");
+        const feedback = document.getElementById('ansFeedback');
+
+        if (mainBtn.innerText === "確認送出") {
+            const correctArr = q.ans.toUpperCase().split(",").sort();
+            const userArr = selectedIds.sort();
+            const isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+            
             document.querySelectorAll('.opt-btn').forEach(b => {
                 b.onclick = null;
-                const isCorrect = correctArr.includes(b.dataset.id);
-                if (isCorrect) b.classList.add('correct'); // 正確答案顯綠
-                if (b.classList.contains('selected') && !isCorrect) b.classList.add('wrong'); // 選錯顯紅
+                if (correctArr.includes(b.dataset.id)) b.classList.add('correct');
+                if (b.classList.contains('selected') && !correctArr.includes(b.dataset.id)) b.classList.add('wrong');
             });
-            document.getElementById('mainBtn').innerText = "下一題";
+
+            feedback.style.display = "block";
+            if (isCorrect) {
+                feedback.className = "ans-feedback feedback-correct";
+                feedback.innerText = "✨ 複選正確！";
+            } else {
+                feedback.className = "ans-feedback feedback-wrong";
+                feedback.innerText = `❌ 答錯了，正確組合是：${q.ans}`;
+            }
+            mainBtn.innerText = "下一題";
         } else {
             index++;
             render();
         }
     }
 </script>
+</body>
+</html>
