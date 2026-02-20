@@ -3,50 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vault System</title>
+    <title>Vault Console</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #000000; --card: #1c1c1e; --primary: #0A84FF; --danger: #FF453A; --success: #32D74B; --text: #FFFFFF; --secondary-text: #8E8E93; }
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-user-select: none; user-select: none; }
-        .header { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(20px); padding: 15px; border-bottom: 0.5px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 100; display: none; }
-        .toolbar { display: flex; gap: 12px; max-width: 500px; margin: 0 auto; }
-        .btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; font-size: 0.9rem; }
-        .btn-sync { background: var(--success); }
-        .btn-logout { background: rgba(255, 255, 255, 0.1); }
-        .container { padding: 16px; max-width: 500px; margin: 0 auto; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-        .card-tag { font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 6px; color: var(--secondary-text); }
-        .row { display: flex; justify-content: space-between; padding: 10px 0; }
-        .label { color: var(--secondary-text); font-size: 0.85rem; }
-        .value { font-weight: 500; }
-        .val-amount { font-family: 'SF Mono', monospace; color: #32D74B; }
-        .high-rate { color: #FFD60A; font-weight: 700; }
+        :root { 
+            --bg: #000000; 
+            --card-bg: #1c1c1e; 
+            --accent: #0A84FF; 
+            --success: #32D74B; 
+            --warning: #FFD60A;
+            --danger: #FF453A;
+            --text-main: #FFFFFF;
+            --text-sub: #8E8E93;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        * { box-sizing: border-box; font-family: -apple-system, "SF Pro Text", sans-serif; }
+        
+        body { 
+            background: var(--bg); margin: 0; padding: 0; color: var(--text-main); 
+            -webkit-user-select: none; user-select: none; 
+            background-attachment: fixed;
+        }
+
+        /* 毛玻璃導覽列 */
+        .header { 
+            background: rgba(0, 0, 0, 0.75); 
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); 
+            padding: 18px; border-bottom: 0.5px solid var(--border); 
+            position: sticky; top: 0; z-index: 100; display: none;
+        }
+        
+        .toolbar { display: flex; gap: 12px; max-width: 500px; margin: 0 auto; align-items: center; }
+        .page-title { flex-grow: 1; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; }
+        
+        .btn-icon { 
+            background: rgba(255,255,255,0.1); border: none; width: 40px; height: 40px; 
+            border-radius: 12px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
+
+        /* 資產卡片 */
+        .card { 
+            background: var(--card-bg); border-radius: 24px; padding: 24px; 
+            margin-bottom: 20px; border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+        .card:active { transform: scale(0.98); }
+        
+        .card-header { 
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 18px;
+        }
+        
+        .bank-info { display: flex; align-items: center; gap: 12px; }
+        .bank-icon { 
+            width: 44px; height: 44px; background: rgba(10, 132, 255, 0.1); 
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 1.2rem;
+        }
+        
+        .bank-name { font-weight: 700; font-size: 1.1rem; }
+        .acc-type { color: var(--text-sub); font-size: 0.8rem; margin-top: 2px; }
+
+        /* 數據列設計 */
+        .data-row { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-top: 0.5px solid var(--border);
+        }
+        
+        .label { color: var(--text-sub); font-size: 0.85rem; font-weight: 500; }
+        .value { font-weight: 600; font-size: 1rem; }
+        
+        /* 金額與利率特殊樣式 */
+        .val-primary { font-size: 1.4rem; font-weight: 800; color: var(--success); letter-spacing: -0.5px; font-family: 'SF Mono', monospace; }
+        .rate-badge { 
+            background: rgba(255, 214, 10, 0.15); color: var(--warning); 
+            padding: 4px 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+        }
+
+        /* 登入視窗美化 */
         .overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal { text-align: center; width: 85%; max-width: 320px; }
-        input { width: 100%; padding: 16px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; border-radius: 16px; font-size: 1.5rem; text-align: center; outline: none; }
-        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: bold; }
-        .loading { text-align: center; color: var(--secondary-text); margin-top: 100px; }
+        .modal-icon { 
+            width: 70px; height: 70px; background: rgba(10, 132, 255, 0.1); 
+            border-radius: 20px; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 2rem; border: 1px solid rgba(10, 132, 255, 0.2);
+        }
+        input { 
+            width: 100%; padding: 18px; margin-bottom: 20px; border: 1px solid var(--border); 
+            background: #1c1c1e; color: white; border-radius: 16px; 
+            font-size: 1.8rem; text-align: center; outline: none; letter-spacing: 10px;
+        }
+        .btn-primary { 
+            width: 100%; padding: 16px; background: var(--accent); color: white; 
+            border: none; border-radius: 16px; font-weight: 700; font-size: 1rem;
+        }
+
+        .loading-box { text-align: center; margin-top: 100px; color: var(--text-sub); }
     </style>
 </head>
 <body oncontextmenu="return false;">
+
 <div id="loginOverlay" class="overlay">
     <div class="modal">
-        <i class="fas fa-key" style="font-size:3rem; color:var(--primary); margin-bottom:20px;"></i>
-        <h2 style="margin:0">System Authorization</h2>
-        <input type="password" id="accPwd" placeholder="••••" inputmode="numeric">
-        <button class="btn-login" onclick="login()">Authorize</button>
+        <div class="modal-icon"><i class="fas fa-fingerprint"></i></div>
+        <h2 style="margin:0 0 10px">Vault Access</h2>
+        <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom:30px;">Identity Verification Required</p>
+        <input type="password" id="accPwd" placeholder="••••" inputmode="numeric" maxlength="4">
+        <button class="btn-primary" onclick="login()">Unlock Terminal</button>
     </div>
 </div>
+
 <div id="header" class="header">
     <div class="toolbar">
-        <button class="btn btn-sync" onclick="fetchData()"><i class="fas fa-sync-alt"></i> Sync</button>
-        <button class="btn btn-logout" onclick="logout()">Logout</button>
+        <button class="btn-icon" onclick="logout()"><i class="fas fa-chevron-left"></i></button>
+        <div class="page-title">ASSET CONSOLE</div>
+        <button class="btn-icon" onclick="fetchData()"><i class="fas fa-sync-alt"></i></button>
     </div>
 </div>
+
 <div id="dataList" class="container"></div>
+
 <script>
     const CONFIG = {
         API_URL: "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec"
@@ -56,8 +136,7 @@
 
     window.onload = () => {
         if(CURRENT_PWD) {
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('header').style.display = 'block';
+            showConsole();
             fetchData();
         }
     };
@@ -67,56 +146,81 @@
         if(pwd) {
             CURRENT_PWD = pwd;
             sessionStorage.setItem('active_session_pwd', pwd);
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('header').style.display = 'block';
+            showConsole();
             fetchData();
         }
     }
 
+    function showConsole() {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('header').style.display = 'block';
+    }
+
     function logout() {
         sessionStorage.clear();
-        window.location.href = '../index.html'; // 跳回首頁
+        window.location.href = '../index.html';
     }
 
     async function fetchData() {
         const list = document.getElementById('dataList');
-        list.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Initializing...</div>';
+        list.innerHTML = '<div class="loading-box"><i class="fas fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:15px">Establishing Secure Link...</p></div>';
         try {
             const res = await fetch(`${CONFIG.API_URL}?pwd=${encodeURIComponent(CURRENT_PWD)}`);
             const json = await res.json();
             if(json.status === "success") {
                 render(json.headers, json.data);
             } else {
-                alert("Authorization Denied");
+                alert("Security Breach: Invalid Credentials");
                 logout();
             }
         } catch(e) {
-            list.innerHTML = '<div class="loading">❌ Connection Error</div>';
+            list.innerHTML = '<div class="loading-box" style="color:var(--danger)">❌ Link Interrupted</div>';
         }
     }
 
     function render(headers, data) {
         document.getElementById('dataList').innerHTML = data.map(item => {
-            let rows = headers.map(h => {
+            let detailRows = headers.map(h => {
                 let val = item[h];
-                let valClass = "value";
+                
+                // 跳過標題已有的名稱
+                if (h === '帳戶名稱') return '';
+
+                // 金額美化
                 if (h.includes('金額')) {
-                    valClass += " val-amount";
                     let num = String(val).replace(/[^0-9.-]/g, '');
-                    val = isNaN(num) ? val : "NT$ " + Number(num).toLocaleString();
+                    let formattedNum = isNaN(num) ? val : Number(num).toLocaleString();
+                    return `<div class="data-row"><span class="label">${h}</span><span class="value val-primary">NT$ ${formattedNum}</span></div>`;
                 }
+
+                // 利率美化
                 if (h.includes('利率')) {
-                    let rate = parseFloat(val);
-                    if (rate >= 0.015) valClass += " high-rate";
-                    val = (rate * 100).toFixed(2) + '%';
+                    let rate = (parseFloat(val) * 100).toFixed(2) + '%';
+                    return `<div class="data-row"><span class="label">${h}</span><span class="rate-badge">${rate}</span></div>`;
                 }
+
+                // 日期修正
                 if (h.includes('日期')) {
                     const d = new Date(val);
-                    if (!isNaN(d)) val = new Date(d.getTime() + 8*3600*1000).toISOString().split('T')[0];
+                    val = isNaN(d) ? val : new Date(d.getTime() + 8*3600*1000).toISOString().split('T')[0];
                 }
-                return `<div class="row"><span class="label">${h}</span><span class="${valClass}">${val || '-'}</span></div>`;
+
+                return `<div class="data-row"><span class="label">${h}</span><span class="value">${val || '-'}</span></div>`;
             }).join('');
-            return `<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-shield-alt"></i> ${item['帳戶名稱'] || 'Account'}</div><div class="card-tag">${item['帳戶類別'] || 'Standard'}</div></div>${rows}</div>`;
+            
+            return `
+            <div class="card">
+                <div class="card-header">
+                    <div class="bank-info">
+                        <div class="bank-icon"><i class="fas fa-university"></i></div>
+                        <div>
+                            <div class="bank-name">${item['帳戶名稱'] || 'Standard Account'}</div>
+                            <div class="acc-type">${item['帳戶類別'] || 'Personal Asset'}</div>
+                        </div>
+                    </div>
+                </div>
+                ${detailRows}
+            </div>`;
         }).join('');
     }
 </script>
