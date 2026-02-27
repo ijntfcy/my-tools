@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JeffreyAsset</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --j-b: #F9F9F7; --j-c: #FFFFFF; --j-a: #8E735B; --j-t: #3C3C3C; --j-s: #A0A0A0; --j-l: #F1EFEA; --j-g: linear-gradient(135deg, #EADBC8 0%, #C19A6B 100%); }
+        body { background: var(--j-b); margin: 0; padding: 0; color: var(--j-t); font-family: "PingFang TC", sans-serif; }
+        .j-h { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--j-l); }
+        .j-ht { font-weight: 800; font-size: 0.85rem; color: var(--j-a); letter-spacing: 2px; }
+        .j-bc { background: white; border: 1px solid var(--j-l); width: 38px; height: 38px; border-radius: 50%; color: var(--j-a); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .j-ct { padding: 0 20px 50px; max-width: 480px; margin: 0 auto; }
+        .j-sc { background: var(--j-g); border-radius: 35px; padding: 35px 25px; margin: 20px 0; color: white; box-shadow: 0 15px 35px rgba(142, 115, 91, 0.25); text-align: center; }
+        .j-sl { font-size: 0.75rem; font-weight: 700; opacity: 0.85; margin-bottom: 10px; }
+        .j-st { font-size: 2.5rem; font-weight: 900; }
+        .j-ab { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px; }
+        .j-bt { flex: 1; padding: 14px 5px; border-radius: 20px; border: 1px solid var(--j-l); background: white; color: var(--j-a); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .j-bt.active { background: #6D543E; color: white; }
+        .j-ca { background: var(--j-c); border-radius: 30px; padding: 25px; margin-bottom: 20px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
+        .j-tg { position: absolute; top: 22px; right: 25px; font-size: 0.7rem; color: var(--j-s); border: 1px solid var(--j-l); padding: 2px 8px; border-radius: 8px; }
+        .j-bn { font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; }
+        .j-r { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--j-l); }
+        .j-vm { font-size: 1.4rem; font-weight: 800; color: var(--j-a); }
+        .j-ov { position: fixed; inset: 0; background: var(--j-b); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .j-md { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 80%; max-width: 300px; }
+        .j-in { width: 100%; padding: 15px; margin: 20px 0; border: 1px solid var(--j-l); border-radius: 15px; text-align: center; font-size: 1.5rem; outline: none; box-sizing: border-box; }
+        .j-go { width: 100%; padding: 15px; background: var(--j-a); color: white; border: none; border-radius: 15px; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="j_ov" class="j-ov">
+    <div class="j-md">
+        <h2 style="margin:0; color: var(--j-a);">安全驗證</h2>
+        <input type="password" id="j_pc" class="j-in" placeholder="••••" inputmode="numeric">
+        <button class="j-go" id="j_lb" onclick="_j0x1a()">確認解鎖</button>
+    </div>
+</div>
+
+<div id="j_app" style="display:none;">
+    <div class="j-h">
+        <button class="j-bc" onclick="location.href='../index.html'"><i class="fas fa-home"></i></button>
+        <div id="j_uw" class="j-ht">HELLO</div>
+        <div style="width:38px;"></div>
+    </div>
+    <div class="j-ct">
+        <div class="j-sc">
+            <div class="j-sl">TOTAL ASSETS</div>
+            <div id="j_td" class="j-st">$ 0</div>
+        </div>
+        <div class="j-ab">
+            <button class="j-bt" id="j_fl" onclick="_j0x4d()"><i class="fas fa-university"></i><span id="j_lt">帳戶</span></button>
+            <button class="j-bt" onclick="_j0x2c()"><i class="fas fa-sync-alt"></i>同步</button>
+            <button class="j-bt" onclick="_j0x9f()"><i class="fas fa-sign-out-alt"></i>登出</button>
+        </div>
+        <div id="j_ls"></div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        const _0x5a21 = "https://script.google.com/macros/s/AKfycbwU42wa6M0JXwxDXetSH37-QwDGxNu1tbqbiM80tag-qzNC9Vmckf5UgnfCKAurptZb/exec";
+        let _0x1b2c = "", _0x3d4e = "...", _0x5f6g = [], _0x7h8i = [], _0x9j0k = ["全部"], _0x1m2n = 0;
+
+        fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => { _0x3d4e = d.ip; }).catch(() => { _0x3d4e = "F"; });
+
+        window._j0x1a = async function() {
+            const v = document.getElementById('j_pc').value;
+            if(!v) return;
+            if (_0x3d4e === "...") {
+                document.getElementById('j_lb').innerText = "...";
+                await new Promise(r => setTimeout(r, 800));
+            }
+            _0x1b2c = v;
+            document.getElementById('j_ov').style.display='none';
+            document.getElementById('j_app').style.display='block';
+            _j0x2c();
+        };
+
+        window._j0x9f = function() { _0x1b2c = ""; location.reload(); };
+
+        function _0x12ab(n) {
+            let x = parseFloat(String(n).replace(/[^0-9.-]/g, ''));
+            return (isNaN(x) || x <= 0) ? 0 : x;
+        }
+
+        function _0x34cd(s) {
+            if (!s || s === '-') return '-';
+            const t = new Date(s);
+            return isNaN(t.getTime()) ? s : `${t.getFullYear()}/${String(t.getMonth() + 1).padStart(2, '0')}/${String(t.getDate()).padStart(2, '0')}`;
+        }
+
+        window._j0x2c = async function() {
+            const l = document.getElementById('j_ls');
+            l.innerHTML = '<div style="text-align:center; padding:50px; color:#A0A0A0;">...</div>';
+            try {
+                const r = await fetch(`${_0x5a21}?pwd=${encodeURIComponent(_0x1b2c)}&ip=${encodeURIComponent(_0x3d4e)}`);
+                const j = await r.json();
+                if(j.status === "success") {
+                    _0x5f6g = j.data; _0x7h8i = j.headers;
+                    document.getElementById('j_uw').innerText = `HELLO, ${j.userName}`;
+                    _0x9j0k = ["全部", ...new Set(_0x5f6g.map(d => d['帳戶類別']))].filter(Boolean);
+                    _0x55ff();
+                } else {
+                    alert(j.message); _j0x9f();
+                }
+            } catch(e) { l.innerHTML = "ERR"; }
+        };
+
+        window._j0x4d = function() {
+            _0x1m2n = (_0x1m2n + 1) % _0x9j0k.length;
+            document.getElementById('j_lt').innerText = (_0x1m2n === 0) ? "帳戶" : _0x9j0k[_0x1m2n];
+            document.getElementById('j_fl').classList.toggle('active', _0x1m2n !== 0);
+            _0x55ff();
+        };
+
+        function _0x55ff() {
+            const t = _0x9j0k[_0x1m2n];
+            const f = (t === "全部") ? _0x5f6g : _0x5f6g.filter(d => d['帳戶類別'] === t);
+            let s = f.reduce((a, b) => {
+                const k = Object.keys(b).find(y => y.includes('金額'));
+                return a + _0x12ab(b[k]);
+            }, 0);
+            document.getElementById('j_td').innerText = `$ ${s.toLocaleString()}`;
+            document.getElementById('j_ls').innerHTML = f.map(i => {
+                let rs = _0x7h8i.map(h => {
+                    if(['帳戶名稱','帳戶類別'].includes(h)) return '';
+                    let v = i[h] || '-', c = "";
+                    if(h.includes('金額')) { v = `$ ${_0x12ab(v).toLocaleString()}`; c = "j-vm"; }
+                    if(h.includes('日期')) v = _0x34cd(v);
+                    if(h.includes('利率')) { let r = parseFloat(v); v = isNaN(r) ? v : (r * 100).toFixed(2) + '%'; }
+                    return `<div class="j-r"><span style="color:#A0A0A0; font-size:0.8rem">${h}</span><span class="${c}">${v}</span></div>`;
+                }).join('');
+                return `<div class="j-ca"><span class="j-tg">${i['帳戶類別']}</span><span class="j-bn">${i['帳戶名稱']}</span>${rs}</div>`;
+            }).join('');
+        }
+    })();
+</script>
+</body>
+</html>
