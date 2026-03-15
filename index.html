@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Today</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #F9F9F7; --card: #FFFFFF; --accent: #A68E74; --text: #4A4A4A; --text-dim: #9B9B9B; --shadow: rgba(166, 142, 116, 0.12); }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 90%; max-width: 480px; padding: 50px 0; }
+        .profile { text-align: center; margin-bottom: 40px; }
+        .avatar { width: 80px; height: 80px; background: white; border-radius: 28px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border: 1px solid #F2EEE9; font-size: 2rem; color: var(--accent); box-shadow: 0 8px 20px var(--shadow); }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 100%; }
+        .card { background: var(--card); border-radius: 30px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1/1; text-decoration: none; color: inherit; transition: 0.3s; box-shadow: 0 10px 20px var(--shadow); box-sizing: border-box; }
+        .card:active { transform: scale(0.95); }
+        .card i { font-size: 1.8rem; color: var(--accent); }
+        .card-title { font-weight: 700; font-size: 1.1rem; margin-top: 10px; color: var(--text); }
+        .card-wide { grid-column: span 2; aspect-ratio: unset; height: 120px; }
+        .clock { font-size: 2.2rem; font-weight: 800; margin-top: 5px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="profile">
+        <div class="avatar"><i class="fas fa-feather-alt"></i></div>
+        <h1 style="font-size: 1.5rem;">Hello, Today.</h1>
+    </div>
+    <div class="grid">
+        <div class="card card-wide">
+            <div id="date" style="color: var(--accent); font-size: 0.8rem; font-weight: 700;">LOADING...</div>
+            <div id="clock" class="clock">00:00:00</div>
+        </div>
+        
+        <a href="assets/index.html" class="card">
+            <i class="fas fa-wallet"></i>
+            <div><div class="card-title">資產帳本</div><div style="color:var(--text-dim); font-size:0.8rem;">Balance</div></div>
+        </a>
+
+        <div class="card" onclick="alert('Module building...')">
+            <i class="fas fa-coffee"></i>
+            <div><div class="card-title">生活隨筆</div><div style="color:var(--text-dim); font-size:0.8rem;">Daily</div></div>
+        </div>
+
+        <a href="https://ijntfcy.github.io/my-tools/Pastexams/index.html" class="card">
+            <i class="fas fa-book-open"></i>
+            <div>
+                <div class="card-title">雲端測驗</div>
+                <div style="color:var(--text-dim); font-size:0.8rem;">Exams</div>
+            </div>
+        </a>
+    </div>
+</div>
+<script>
+    function update() {
+        const now = new Date();
+        document.getElementById('date').innerText = now.toLocaleDateString('zh-TW', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
+    }
+    setInterval(update, 1000); update();
+</script>
+</body>
+</html>
