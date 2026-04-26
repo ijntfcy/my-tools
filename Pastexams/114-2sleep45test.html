@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>IF題庫</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{--bg:#000;--card:#1c1c1e;--gold:#d4af37;--text:#fff;--blue:#0a84ff;--warn:#ff9f0a}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"SF Pro Display","PingFang TC",system-ui;margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;-webkit-tap-highlight-color:transparent;overflow-x:hidden;user-select:none}
+.banner{background:rgba(255,159,10,.15);border:1px solid rgba(255,159,10,.3);color:var(--warn);padding:12px 16px;font-size:13px;font-weight:700;text-align:center;border-radius:12px;line-height:1.4}
+.logo{width:90px;height:auto;margin:0 auto 16px;filter:drop-shadow(0 0 10px rgba(212,175,55,.2))}
+.q-title{font-size:22px;font-weight:800;text-align:left;padding:8px 4px 20px 4px;line-height:1.5;color:#fff}
+.i-area{background:0 0;border-bottom:2px solid #3a3a3c;width:100%;font-size:19px;padding:12px 0;color:#fff;resize:none;transition:all .3s ease;overflow:hidden;min-height:50px}
+.i-area:focus{border-bottom-color:var(--blue);outline:0}
+.diff-box{background:#1c1c1e;border-radius:16px;padding:20px;margin:15px 0;font-size:18px;line-height:1.8;border:1px solid rgba(255,255,255,.08);word-break:break-all;white-space:pre-wrap}
+.diff-good{color:#30d158;font-weight:500}
+.diff-miss{color:#ff453a;text-decoration:underline;text-underline-offset:4px;background:rgba(255,69,58,.15);border-radius:4px;padding:0 2px;margin:0 1px}
+.diff-extra{color:#ff9f0a;text-decoration:line-through;background:rgba(255,159,10,.15);border-radius:4px;padding:0 2px;margin:0 1px;opacity:.9}
+.btn-group{display:flex;gap:12px;margin-top:20px;margin-bottom:40px}
+.b-sub{flex:1.6;background:#fff;color:#000;font-size:20px;font-weight:800;padding:16px 0;border-radius:18px}
+.b-next{flex:1;background:#2c2c2e;color:#fff;font-size:20px;font-weight:700;padding:16px 0;border-radius:18px;border:.5px solid rgba(255,255,255,.1)}
+.b-sub:active,.b-next:active{transform:scale(.97);opacity:.9}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.94);backdrop-filter:blur(20px);border-top:.5px solid rgba(255,255,255,.1);padding:14px 24px calc(14px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;z-index:1000}
+.n-btn{display:flex;flex-direction:column;align-items:center;color:#8e8e93;gap:4px;cursor:pointer}
+.n-btn span{font-size:10px;font-weight:700}
+.n-btn:active{opacity:.6}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.rot{animation:spin 1s linear infinite}
+#menu{position:fixed;inset:0;background:rgba(0,0,0,.98);z-index:2000;display:none;flex-direction:column}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
+<div id="v1" class="p-8 mt-10">
+<div class="text-center mb-8">
+<img src="https://www.cga.gov.tw/GipOpen/wSite/public/Data/f1433488403280.jpg" class="logo">
+<h1 class="text-2xl font-black tracking-tight">睡不著就看刑法吧</h1>
+<p class="text-zinc-500 text-xs mt-2 font-bold tracking-[0.2em] uppercase">專軍班 114-2 簡答題版</p>
+</div>
+<div class="banner mb-10">⚠️ 此系統為學員自主開發，非官方正式軟體。內容以官方教材為準，僅供練習使用。</div>
+<div class="bg-[#1c1c1e] p-8 rounded-[32px] border border-white/5 shadow-2xl">
+<input type="password" id="pass" inputmode="numeric" placeholder="請輸入通行碼" class="w-full bg-black border border-zinc-800 rounded-2xl p-5 text-white text-center text-2xl mb-6 outline-none focus:border-blue-500 transition-all">
+<button id="l-btn" class="w-full bg-white text-black font-black py-5 rounded-2xl active:scale-95 transition-all text-xl">進入睡覺倒數</button>
+</div>
+</div>
+<div id="v2" class="hidden flex-grow p-6 pb-40">
+<div class="px-1 mb-1 mt-2"><span id="q-sub" class="bg-blue-900/40 text-blue-300 text-xs font-bold px-2.5 py-1 rounded-md border border-blue-500/30 tracking-widest"></span></div>
+<div id="q-txt" class="q-title">正在載入...</div>
+<div class="mb-8">
+<div class="flex justify-between text-[10px] text-zinc-500 font-black mb-2 tracking-widest uppercase"><span>Practice Input</span><span id="c-cnt" class="font-mono">0 Characters</span></div>
+<textarea id="u-in" class="i-area" rows="1" placeholder="在此輸入標準答案內容..." oninput="reSz(this)"></textarea>
+</div>
+<div id="res" class="hidden">
+<div class="text-[10px] text-center text-zinc-600 font-bold mb-3 tracking-[0.2em] uppercase">比對分析 (紅色底線為漏字/錯字)</div>
+<div id="d-out" class="diff-box"></div>
+</div>
+<div class="bg-[#1c1c1e] rounded-2xl p-5 mb-5 border border-white/5" id="h-box">
+<div class="flex justify-between items-center cursor-pointer" onclick="tglH()">
+<span class="text-[#d4af37] font-black text-sm">答案 REFERENCE</span>
+<span id="h-st" class="text-[10px] text-zinc-500 font-bold">點擊查看</span>
+</div>
+<div id="h-con" class="hidden pt-4 mt-4 border-t border-white/5 text-zinc-300 leading-relaxed whitespace-pre-wrap text-lg"></div>
+</div>
+<div class="btn-group">
+<button id="s-btn" class="b-sub">提交比對</button>
+<button id="n-btn" class="b-next">下一題</button>
+</div>
+</div>
+<div id="menu">
+<div class="p-6 flex justify-between items-center border-b border-white/10 mt-10"><span class="text-2xl font-black">題目選單</span><button onclick="clsM()" class="text-zinc-400 bg-zinc-900 px-5 py-2 rounded-full text-xs font-bold">關閉</button></div>
+<div id="m-list" class="flex-grow overflow-y-auto p-5 space-y-3"></div>
+</div>
+<div id="nb" class="nav hidden">
+<div><div id="p-txt" class="text-lg font-black font-mono leading-none text-white">Q. 001</div><div id="s-tm" class="text-[9px] text-zinc-600 font-black tracking-tighter mt-1 uppercase">LAST SYNC 0:00</div></div>
+<div class="flex gap-8">
+<div class="n-btn" onclick="opM()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg><span>選題</span></div>
+<div class="n-btn" id="syn" onclick="syD()"><div id="s-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg></div><span>同步</span></div>
+<div class="n-btn" onclick="lout()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg><span>登出</span></div>
+</div>
+</div>
+</div>
+<script>
+const URL="https://script.google.com/macros/s/AKfycbxHvmLwc6xJNz5JvHqr6-R0u7nFGjQQm7tmR6TdL-Gra24v2YIvSv8R9tqFIx9PWwgs/exec";
+let d=[],idx=0,pw="",ip="UNKNOWN",syn=false;
+async function getIP(){try{const r=await fetch('https://api.ipify.org?format=json');const j=await r.json();ip=j.ip}catch(e){}}
+async function start(){const p=document.getElementById('pass').value.trim();if(!p)return;pw=p;const b=document.getElementById('l-btn');b.innerText="連線驗證中...";b.disabled=true;try{const r=await fetch(`${URL}?p=${encodeURIComponent(p)}&ip=${encodeURIComponent(ip)}`);const j=await r.json();if(j.error){alert("密碼錯誤");b.innerText="進入睡覺倒數";b.disabled=false;return}d=j;document.getElementById('v1').classList.add('hidden');document.getElementById('v2').classList.remove('hidden');document.getElementById('nb').classList.remove('hidden');upST();show()}catch(e){alert("伺服器連線失敗");b.innerText="進入睡覺倒數";b.disabled=false}}
+function upST(){const e=document.getElementById('s-tm');if(e){const n=new Date();e.innerText=`LAST SYNC ${n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})}`}}
+async function syD(){if(syn||!pw)return;syn=true;const i=document.getElementById('s-ic');if(i)i.classList.add('rot');try{const r=await fetch(`${URL}?p=${encodeURIComponent(pw)}&ip=${encodeURIComponent(ip)}&t=${Date.now()}`);const j=await r.json();if(j.error){alert("同步失敗：密碼已失效");lout();return}d=j;upST();if(idx>=d.length)idx=0;show()}catch(e){alert("同步失敗")}finally{syn=false;if(i)i.classList.remove('rot')}}
+function show(){if(!d||d.length===0)return;const q=d[idx];document.getElementById('q-sub').innerText=q.subject||"未分類";document.getElementById('q-txt').innerText=q.question;document.getElementById('h-con').innerText=q.answer;document.getElementById('p-txt').innerText=`Q. ${(idx+1).toString().padStart(3,'0')}`;const i=document.getElementById('u-in');i.value="";i.disabled=false;i.style.height='auto';document.getElementById('res').classList.add('hidden');document.getElementById('h-con').classList.add('hidden');document.getElementById('h-st').innerText="點擊查看";document.getElementById('c-cnt').innerText="0 Characters";window.scrollTo(0,0)}
+function reSz(e){e.style.height='auto';e.style.height=e.scrollHeight+'px';document.getElementById('c-cnt').innerText=`${e.value.length} Characters`}
+function tglH(){const c=document.getElementById('h-con'),s=document.getElementById('h-st');c.classList.toggle('hidden');s.innerText=c.classList.contains('hidden')?"點擊查看":"收合答案"}
+function gDif(u,t){const cl=s=>s.replace(/[\s\t\r\n]/g,'').replace(/，/g,',').replace(/。/g,'.').replace(/：/g,':').replace(/；/g,';').replace(/（/g,'(').replace(/）/g,')');const s1=u.trim(),s2=t.trim(),n=s1.length,m=s2.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)dp[i][j]=(s1[i-1]===s2[j-1]||cl(s1[i-1])===cl(s2[j-1]))?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);let f=[],i=n,j=m;while(i>0||j>0){if(i>0&&j>0&&(s1[i-1]===s2[j-1]||cl(s1[i-1])===cl(s2[j-1]))){f.push({t:'good',c:s1[i-1]});i--;j--}else if(j>0&&(i===0||dp[i][j-1]>=dp[i-1][j])){f.push({t:'miss',c:s2[j-1]});j--}else{f.push({t:'extra',c:s1[i-1]});i--}}f.reverse();let r="",ct=null,cx="";for(let k=0;k<f.length;k++){if(f[k].t!==ct){if(ct!==null)r+=`<span class="diff-${ct}">${cx}</span>`;ct=f[k].t;cx=f[k].c}else cx+=f[k].c}if(ct!==null)r+=`<span class="diff-${ct}">${cx}</span>`;return r||`<span class="text-zinc-500">未輸入內容</span>`}
+function opM(){const l=document.getElementById('m-list');l.innerHTML="";d.forEach((q,i)=>{const v=document.createElement('div');v.className=`p-5 rounded-2xl bg-zinc-900 border-2 cursor-pointer ${i===idx?'border-blue-500 bg-blue-500/10':'border-transparent'}`;v.innerHTML=`<div class="text-[10px] font-black text-zinc-600 mb-1">QUESTION ${(i+1).toString().padStart(3,'0')}</div><div class="text-sm font-bold line-clamp-2">${q.question}</div>`;v.onclick=()=>{idx=i;show();clsM()};l.appendChild(v)});document.getElementById('menu').style.display='flex'}
+function clsM(){document.getElementById('menu').style.display='none'}
+function lout(){d=[];idx=0;pw="";document.getElementById('pass').value="";document.getElementById('v1').classList.remove('hidden');document.getElementById('v2').classList.add('hidden');document.getElementById('nb').classList.add('hidden');const b=document.getElementById('l-btn');b.innerText="進入睡覺倒數";b.disabled=false}
+document.getElementById('l-btn').onclick=start;
+document.getElementById('s-btn').onclick=()=>{if(!d[idx])return;const u=document.getElementById('u-in').value,t=d[idx].answer,h=gDif(u,t);document.getElementById('d-out').innerHTML=h;document.getElementById('res').classList.remove('hidden');document.getElementById('u-in').disabled=true;document.getElementById('h-con').classList.remove('hidden');document.getElementById('h-st').innerText="收合答案";setTimeout(()=>document.getElementById('res').scrollIntoView({behavior:'smooth',block:'start'}),100)};
+document.getElementById('n-btn').onclick=()=>{idx=(idx+1)%d.length;show()};
+document.getElementById('pass').onkeydown=(e)=>{if(e.key==='Enter')start()};
+window.onload=getIP;
+</script>
+</body>
+</html>
